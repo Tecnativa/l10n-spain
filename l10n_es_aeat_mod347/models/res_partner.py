@@ -15,19 +15,20 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-from openerp.osv import fields, orm
+from openerp import fields, models, api
 
 
-class ResPartner(orm.Model):
+class ResPartner(models.Model):
     _inherit = "res.partner"
-    _columns = {
-        'not_in_mod347': fields.boolean(
-            "Not included in 347 report",
-            help="If you mark this field, this partner will not be included "
-            "in any AEAT 347 model report, independently from the total "
-            "amount of its operations."),
-    }
 
-    _defaults = {
-        'not_in_mod347': False,
-    }
+    not_in_mod347 = fields.Boolean(
+        "Not included in 347 report",
+        help="If you mark this field, this partner will not be included in "
+             "any AEAT 347 model report, independently from the total "
+             "amount of its operations.", default=False)
+
+    @api.model
+    def _commercial_fields(self):
+        res = super(ResPartner, self)._commercial_fields()
+        res += ['not_in_mod347']
+        return res
