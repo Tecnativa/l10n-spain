@@ -27,7 +27,7 @@ class ResPartner(models.Model):
         return self.name_get(cr, uid, ids, context=context)
 
     @api.multi
-    @api.depends('name', 'comercial')
+    @api.depends('name', 'comercial', 'type')
     def name_get(self):
         result = []
         name_pattern = self.env['ir.config_parameter'].get_param(
@@ -35,8 +35,9 @@ class ResPartner(models.Model):
         orig_name = dict(super(ResPartner, self).name_get())
         for partner in self:
             name = orig_name[partner.id]
-            if partner.comercial and name_pattern:
+            comercial = partner.commercial_partner_id.comercial
+            if comercial and name_pattern:
                 name = name_pattern % {'name': name,
-                                       'comercial_name': partner.comercial}
+                                       'comercial_name': comercial}
             result.append((partner.id, name))
         return result
