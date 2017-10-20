@@ -39,7 +39,7 @@ class AccountBalanceReportingTemplate(models.Model):
                    ('user', 'User')],
         string='Type', default='user', old_name='type')
     report_xml_id = fields.Many2one(
-        comodel_name='ir.actions.report.xml', string='Report design',
+        comodel_name='ir.actions.report', string='Report design',
         ondelete='set null')
     description = fields.Text('Description')
     balance_mode = fields.Selection(

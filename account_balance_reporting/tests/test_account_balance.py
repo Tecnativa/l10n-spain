@@ -365,14 +365,18 @@ class TestAccountBalance(TestAccountBalanceBase):
         report_name = 'account_balance_reporting.report_generic'
         self.assertDictContainsSubset(
             {
-                'type': 'ir.actions.report.xml',
+                'type': 'ir.actions.report',
                 'report_name': report_name,
-                'datas': {
+                'data': {
                     'ids': self.report.ids,
+                    'model': 'account.balance.reporting',
                 },
             },
             report_action,
         )
         # Check if report template is correct
-        report_html = self.env['report'].get_html(self.report.id, report_name)
-        self.assertIn('<tbody class="balance_reporting">', report_html)
+        report_html = self.print_wizard.report_xml_id.render_qweb_html(
+            self.report.ids, report_action['data'],
+        )
+        self.assertEqual(report_html[1], 'html')
+        self.assertIn(b'<tbody class="balance_reporting">', report_html[0])
