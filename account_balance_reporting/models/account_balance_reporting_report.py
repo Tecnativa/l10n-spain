@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # © 2009 Pexego/Comunitea
 # © 2016 Pedro M. Baeza
 # © 2016 Vicent Cubells
@@ -317,8 +316,8 @@ class AccountBalanceReportingLine(models.Model):
             value, move_lines = self._get_account_balance(
                 tmpl_value, domain, balance_mode=balance_mode)
         elif re.match(r'^[\+\-0-9a-zA-Z_\*\ ]*$', tmpl_value):
-            # Account concept codes separated by "+" => sum of the
-            # concepts (template lines) values.
+            # Account concept codes separated by "+" or "-" => sum/substract of
+            # the concepts (template lines) values.
             for line_code in re.findall(
                     r'(-?\(?[0-9a-zA-Z_]*\)?)', tmpl_value):
                 sign = 1
@@ -371,6 +370,7 @@ class AccountBalanceReportingLine(models.Model):
             # Exclude closing/opening/PL moves (if account_fiscal_year_closing
             # is installed)
             if 'closing_type' in self.env['account.move']._fields:
+                # pragma: no cover
                 domain_current.append(('move_id.closing_type', '!=', 'none'))
                 domain_previous.append(('move_id.closing_type', '!=', 'none'))
             for line in self.filtered(lambda l: l.report_id == report):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # © 2009 Pexego/Comunitea
 # © 2016 Pedro M. Baeza
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl-3.0).

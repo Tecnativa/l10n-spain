@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 Tecnativa - Vicent Cubells <vicent.cubells@tecnativa.com>
 # Copyright 2016-2017 Tecnativa - Pedro M. Baeza <pedro.baeza@tecnativa.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl-3.0).
@@ -133,6 +132,10 @@ class TestAccountBalanceBase(common.SavepointCase):
         cls.template = cls.template_obj.create(vals={
             'name': 'test_template debit-credit',
             'balance_mode': '0',
+            'report_xml_id': cls.env.ref(
+                'account_balance_reporting.'
+                'report_account_balance_reporting_generic'
+            ).id,
         })
         cls.parent = cls.line_obj.create(vals={
             'name': 'Testing balance template',
@@ -177,12 +180,44 @@ class TestAccountBalanceBase(common.SavepointCase):
             'sequence': 5,
         })
         cls.line6 = cls.line_obj.create(vals={
-            'name': 'Sum of accounts',
+            'name': 'Sum of codes',
             'code': '1600',
             'current_value': '1400 + 1500',
             'negate': False,
             'template_id': cls.template.id,
             'sequence': 6,
+        })
+        cls.line7 = cls.line_obj.create(vals={
+            'name': 'Debit of account 4',
+            'code': '1700',
+            'current_value': 'debit(656*)',
+            'negate': False,
+            'template_id': cls.template.id,
+            'sequence': 7,
+        })
+        cls.line8 = cls.line_obj.create(vals={
+            'name': 'Credit of account 4',
+            'code': '1800',
+            'current_value': 'credit(656*)',
+            'negate': False,
+            'template_id': cls.template.id,
+            'sequence': 8,
+        })
+        cls.line9 = cls.line_obj.create(vals={
+            'name': 'Constant value',
+            'code': '1900',
+            'current_value': '50.0',
+            'negate': False,
+            'template_id': cls.template.id,
+            'sequence': 9,
+        })
+        cls.line10 = cls.line_obj.create(vals={
+            'name': 'Subtract of codes',
+            'code': '2000',
+            'current_value': '1400 - 1500',
+            'negate': False,
+            'template_id': cls.template.id,
+            'sequence': 10,
         })
         # Create a report with this template
         cls.report = cls.reporting_obj.create(vals={
@@ -203,13 +238,9 @@ class TestAccountBalanceBase(common.SavepointCase):
             'date_end': '2017-12-31',
         })
         cls.print_wizard = (
-            cls.env['account.balance.reporting.print.wizard'].create({
-                'report_id': cls.report.id,
-                'report_xml_id': cls.env.ref(
-                    'account_balance_reporting.'
-                    'report_account_balance_reporting_generic'
-                ).id,
-            })
+            cls.env['account.balance.reporting.print.wizard'].with_context(
+                active_id=cls.report.id,
+            ).create({})
         )
 
 
@@ -250,7 +281,7 @@ class TestAccountBalance(TestAccountBalanceBase):
 
     def test_copy_template(self):
         copied_template = self.template.copy()
-        self.assertEqual(len(copied_template.line_ids), 6)
+        self.assertEqual(len(copied_template.line_ids), 10)
 
     def test_template_line_name_search(self):
         line_obj = self.env['account.balance.reporting.template.line']
@@ -287,6 +318,14 @@ class TestAccountBalance(TestAccountBalanceBase):
                 self.assertAlmostEqual(line5, line.current_value, 2)
             elif line.sequence == 6:
                 self.assertAlmostEqual(line6, line.current_value, 2)
+            elif line.sequence == 7:
+                self.assertAlmostEqual(-90, line.current_value, 2)
+            elif line.sequence == 8:
+                self.assertAlmostEqual(0, line.current_value, 2)
+            elif line.sequence == 9:
+                self.assertAlmostEqual(50.0, line.current_value, 2)
+            elif line.sequence == 10:
+                self.assertAlmostEqual(0, line.current_value, 2)
 
     def test_account_balance_mode_1(self):
         """Check results for debit-credit report with brackets."""
@@ -311,6 +350,14 @@ class TestAccountBalance(TestAccountBalanceBase):
                 self.assertAlmostEqual(line5, line.current_value, 2)
             elif line.sequence == 6:
                 self.assertAlmostEqual(line6, line.current_value, 2)
+            elif line.sequence == 7:
+                self.assertAlmostEqual(-90, line.current_value, 2)
+            elif line.sequence == 8:
+                self.assertAlmostEqual(0, line.current_value, 2)
+            elif line.sequence == 9:
+                self.assertAlmostEqual(50.0, line.current_value, 2)
+            elif line.sequence == 10:
+                self.assertAlmostEqual(-180, line.current_value, 2)
 
     def test_account_balance_mode_2(self):
         """Check results for credit-debit report."""
@@ -335,6 +382,14 @@ class TestAccountBalance(TestAccountBalanceBase):
                 self.assertAlmostEqual(line5, line.current_value, 2)
             elif line.sequence == 6:
                 self.assertAlmostEqual(line6, line.current_value, 2)
+            elif line.sequence == 7:
+                self.assertAlmostEqual(-90, line.current_value, 2)
+            elif line.sequence == 8:
+                self.assertAlmostEqual(0, line.current_value, 2)
+            elif line.sequence == 9:
+                self.assertAlmostEqual(50.0, line.current_value, 2)
+            elif line.sequence == 10:
+                self.assertAlmostEqual(0, line.current_value, 2)
 
     def test_account_balance_mode_3(self):
         """Check results for credit-debit report with brackets."""
@@ -359,8 +414,23 @@ class TestAccountBalance(TestAccountBalanceBase):
                 self.assertAlmostEqual(line5, line.current_value, 2)
             elif line.sequence == 6:
                 self.assertAlmostEqual(line6, line.current_value, 2)
+            elif line.sequence == 7:
+                self.assertAlmostEqual(-90, line.current_value, 2)
+            elif line.sequence == 8:
+                self.assertAlmostEqual(0, line.current_value, 2)
+            elif line.sequence == 9:
+                self.assertAlmostEqual(50.0, line.current_value, 2)
+            elif line.sequence == 10:
+                self.assertAlmostEqual(-180, line.current_value, 2)
 
     def test_generation_report_qweb(self):
+        self.assertEqual(self.print_wizard.report_id, self.report)
+        self.assertEqual(
+            self.print_wizard.report_xml_id,
+            self.env.ref(
+                'account_balance_reporting.'
+                'report_account_balance_reporting_generic'
+            ))
         report_action = self.print_wizard.print_report()
         report_name = 'account_balance_reporting.report_generic'
         self.assertDictContainsSubset(
