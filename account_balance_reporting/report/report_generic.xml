@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright 2016 Vicent Cubells <vicent.cubells@tecnativa.com>
      Copyright 2017 Tecnativa - Pedro M. Baeza
-     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
 <odoo>
 
     <template id="account_balance_reporting.report_generic">

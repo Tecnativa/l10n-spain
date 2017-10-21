@@ -161,7 +161,7 @@ class AccountBalanceReportingTemplateLine(models.Model):
         """Allow to search by code."""
         if args is None:
             args = []
-        args += ['|', ('code', operator, name)]
+        args = ['|', ('code', operator, name)] + args
         return super(AccountBalanceReportingTemplateLine, self).name_search(
             name=name, args=args, operator=operator, limit=limit,
         )

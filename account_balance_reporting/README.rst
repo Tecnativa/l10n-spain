@@ -1,5 +1,5 @@
 .. image:: https://img.shields.io/badge/licence-AGPL--3-blue.svg
-   :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
+   :target: https://www.gnu.org/licenses/agpl-3.0-standalone.html
    :alt: License: AGPL-3
 
 ================================
@@ -30,7 +30,7 @@ but it might be used as a generic accounting report engine.
 Configuration
 =============
 
-#. Go to *Invoicing > Configuration > Financial Reports > Financial Reports*.
+#. Go to *Invoicing / Accounting > Configuration > Management > Spanish Financial Reports*.
 #. Create or edit one existing template.
 #. Add report lines with formulas to configure your financial report.
 
@@ -70,9 +70,10 @@ Contributors
 * Iker Coranti (AvanzOSC)
 * Juanjo Algaz <juanjoa@malagatic.com>
 * Joaquín Gutierrez <joaquing.pedrosa@gmail.com>
-* Pedro M. Baeza <pedro.baeza@tecnativa.com>
 * Oihane Crucelaegui <oihanecrucelaegi@avanzosc.es>
-* Vicent Cubells <vicent@vcubells.net>
+* Tecnativa (https://www.tecnativa.com):
+  * Pedro M. Baeza <pedro.baeza@tecnativa.com>
+  * Vicent Cubells <vicent.cubells@tecnativa.com>
 
 Maintainer
 ----------
