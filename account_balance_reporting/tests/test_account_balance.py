@@ -307,7 +307,6 @@ class TestAccountBalance(TestAccountBalanceBase):
         for line in self.report.line_ids:
             if line.sequence == 1:
                 self.assertAlmostEqual(line1, line.current_value, 2)
-                pass
             elif line.sequence == 2:
                 self.assertAlmostEqual(line2, line.current_value, 2)
             elif line.sequence == 3:
