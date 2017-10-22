@@ -28,15 +28,4 @@ class PrintWizard(models.TransientModel):
 
     @api.multi
     def print_report(self):
-        return {
-            'context': dict(self.env.context, active_ids=self.report_id.ids),
-            'data': {
-                'ids': self.report_id.ids,
-                'model': 'account.balance.reporting',
-            },
-            'type': 'ir.actions.report',
-            'report_name': self.report_xml_id.report_name,
-            'report_type': self.report_xml_id.report_type,
-            'report_file': self.report_xml_id.report_file,
-            'name': self.report_xml_id.name,
-        }
+        return self.report_xml_id.report_action(self.report_id.ids)
