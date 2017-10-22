@@ -64,7 +64,7 @@ class TestAccountBalanceBase(common.SavepointCase):
             'journal_id': cls.journal.id,
             'state': 'draft',
             'company_id': cls.company_id,
-            'date': fields.Date.from_string('2016-01-01'),
+            'date': '2016-01-01',
             'line_ids': [
                 (0, 0, {
                     'account_id': cls.account_1515.id,
@@ -227,6 +227,8 @@ class TestAccountBalanceBase(common.SavepointCase):
             'state': 'draft',
             'current_date_from': fields.Date.today(),
             'current_date_to': fields.Date.today(),
+            'previous_date_from': '2016-01-01',
+            'previous_date_to': '2016-01-01',
         })
         cls.date_range_type = cls.env['date.range.type'].create({
             'name': 'Test range type',
@@ -270,7 +272,7 @@ class TestAccountBalance(TestAccountBalanceBase):
         self.assertTrue(self.report.calc_date)
         line1 = self.report.line_ids.filtered(lambda x: x.sequence == 1)
         self.assertEqual(line1.current_move_line_count, 6)
-        self.assertEqual(line1.previous_move_line_count, 0)
+        self.assertEqual(line1.previous_move_line_count, 2)
         self.report.action_confirm()
         self.assertEqual(self.report.state, 'done')
         self.report.action_cancel()
@@ -278,6 +280,18 @@ class TestAccountBalance(TestAccountBalanceBase):
         self.report.action_recover()
         self.assertEqual(self.report.state, 'draft')
         self.assertFalse(self.report.calc_date)
+        line2 = self.report.line_ids.filtered(lambda x: x.sequence == 2)
+        action = line2.show_move_lines_current()
+        move_lines = (
+            self.move200_1_4.line_ids + self.move75_4_1.line_ids +
+            self.move90_6_1.line_ids
+        ).filtered(lambda x: x.account_id == self.account_1515)
+        self.assertCountEqual(action['domain'][0][2], move_lines.ids)
+        action2 = line2.show_move_lines_previous()
+        move_lines2 = self.move100_1_4.line_ids.filtered(
+            lambda x: x.account_id == self.account_1515
+        )
+        self.assertCountEqual(action2['domain'][0][2], move_lines2.ids)
 
     def test_copy_template(self):
         copied_template = self.template.copy()
