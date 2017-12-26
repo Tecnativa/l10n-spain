@@ -169,6 +169,13 @@ class L10nEsAeatReport(models.AbstractModel):
         help='Company bank account used for the presentation',
         domain="[('acc_type', '=', 'iban'), "
                " ('partner_id', '=', partner_id)]")
+    exception_msg = fields.Char('Exception message',
+                                compute='_compute_exception_msg')
+
+    @api.multi
+    def _compute_exception_msg(self):
+        """To override"""
+
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)',
          'AEAT report identifier must be unique'),
@@ -380,7 +387,7 @@ class L10nEsAeatReport(models.AbstractModel):
     def _filter_phone(self, phone):
         return (phone or '').replace(" ", "")[-9:]
 
-    @api.cr
+    @api.model_cr
     def _register_hook(self):
         res = super(L10nEsAeatReport, self)._register_hook()
         if self._name in ('l10n.es.aeat.report',

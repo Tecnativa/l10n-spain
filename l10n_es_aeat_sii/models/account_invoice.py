@@ -2,18 +2,15 @@
 # Copyright 2017 Ignacio Ibeas <ignacio@acysos.com>
 # Copyright 2017 Studio73 - Pablo Fuentes <pablo@studio73>
 # Copyright 2017 Studio73 - Jordi Tolsà <jordi@studio73.es>
-# Copyright 2017 Otherway - Pedro Rodríguez Gil
-# Copyright 2017 Tecnativa - Pedro M. Baeza
-# Copyright 2017 Comunitea - Omar Castiñeira <omar@comunitea.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import logging
 import json
 
+from odoo import _, api, fields, exceptions, models
 from requests import Session
 
-from openerp import _, api, exceptions, fields, models, SUPERUSER_ID
-from openerp.modules.registry import RegistryManager
+from odoo.modules.registry import RegistryManager
 
 _logger = logging.getLogger(__name__)
 
@@ -25,10 +22,9 @@ except (ImportError, IOError) as err:
     _logger.debug(err)
 
 try:
-    from openerp.addons.connector.queue.job import job
-    from openerp.addons.connector.session import ConnectorSession
+    from odoo.addons.queue_job.job import job
 except ImportError:
-    _logger.debug('Can not `import connector`.')
+    _logger.debug('Can not `import queue_job`.')
     import functools
 
     def empty_decorator_factory(*argv, **kwargs):
@@ -535,6 +531,7 @@ class AccountInvoice(models.Model):
         taxes_sfrsa = self._get_sii_taxes_map(['SFRSA'])
         taxes_sfrisp = self._get_sii_taxes_map(['SFRISP'])
         taxes_sfrns = self._get_sii_taxes_map(['SFRNS'])
+        taxes_sfrnd = self._get_sii_taxes_map(['SFRND'])
         tax_amount = 0.0
         # Check if refund type is 'By differences'. Negative amounts!
         sign = self._get_sii_sign()
@@ -547,7 +544,7 @@ class AccountInvoice(models.Model):
                 isp_dict['DetalleIVA'].append(
                     self._get_sii_tax_dict(tax_line, sign),
                 )
-                tax_amount += tax_line.amount
+                tax_amount += abs(round(tax_line.amount, 2))
             elif tax in taxes_sfrs:
                 sfrs_dict = taxes_dict.setdefault(
                     'DesgloseIVA', {'DetalleIVA': []},
@@ -555,7 +552,7 @@ class AccountInvoice(models.Model):
                 sfrs_dict['DetalleIVA'].append(
                     self._get_sii_tax_dict(tax_line, sign),
                 )
-                tax_amount += round(tax_line.amount, 2)
+                tax_amount += abs(round(tax_line.amount, 2))
             elif tax in taxes_sfrns:
                 sfrns_dict = taxes_dict.setdefault(
                     'DesgloseIVA', {'DetalleIVA': []},
@@ -573,9 +570,15 @@ class AccountInvoice(models.Model):
                 )
                 tax_dict['ImporteCompensacionREAGYP'] = tax_dict.pop(
                     'CuotaSoportada'
-
                 )
-                sfrsa_dict['DetalleIVA'] = [tax_dict]
+                sfrsa_dict['DetalleIVA'].append(tax_dict)
+            elif tax in taxes_sfrnd:
+                sfrnd_dict = taxes_dict.setdefault(
+                    'DesgloseIVA', {'DetalleIVA': []},
+                )
+                sfrnd_dict['DetalleIVA'].append(
+                    self._get_sii_tax_dict(tax_line, sign),
+                )
         return taxes_dict, tax_amount
 
     @api.multi
@@ -703,8 +706,11 @@ class AccountInvoice(models.Model):
                             'origin_invoice_ids.amount_untaxed_signed'
                         ))),
                         'CuotaRectificada': abs(sum(self.mapped(
-                            'origin_invoice_ids.amount_tax_signed'
-                        ))),
+                            'origin_invoice_ids'
+                        ).mapped(lambda x: (
+                            x.amount_total_company_signed -
+                            x.amount_untaxed_signed
+                        )))),
                     }
         return inv_dict
 
@@ -860,18 +866,13 @@ class AccountInvoice(models.Model):
                 invoice._send_invoice_to_sii()
             else:
                 eta = company._get_sii_eta()
-                ctx = self.env.context.copy()
-                ctx.update(company_id=company.id)
-                session = ConnectorSession(
-                    self.env.cr, SUPERUSER_ID, context=ctx,
-                )
-                new_delay = confirm_one_invoice.delay(
-                    session, 'account.invoice', invoice.id,
-                    eta=eta if not invoice.sii_send_failed else False,
-                )
-                invoice.sudo().invoice_jobs_ids |= queue_obj.search(
-                    [('uuid', '=', new_delay)], limit=1,
-                )
+                new_delay = self.sudo().with_context(
+                    company_id=company.id
+                ).with_delay(eta=eta).confirm_one_invoice()
+                job = queue_obj.search([
+                    ('uuid', '=', new_delay.uuid)
+                ], limit=1)
+                invoice.sudo().invoice_jobs_ids |= job
 
     @api.multi
     def _send_invoice_to_sii(self):
@@ -1064,17 +1065,13 @@ class AccountInvoice(models.Model):
                 invoice._cancel_invoice_to_sii()
             else:
                 eta = company._get_sii_eta()
-                ctx = self.env.context.copy()
-                ctx.update(company_id=company.id)
-                session = ConnectorSession(
-                    self.env.cr, SUPERUSER_ID, context=ctx,
-                )
-                new_delay = cancel_one_invoice.delay(
-                    session, 'account.invoice', invoice.id, eta=eta)
-                queue_ids = queue_obj.search([
-                    ('uuid', '=', new_delay)
+                new_delay = self.sudo().with_context(
+                    company_id=company.id,
+                ).with_delay(eta=eta).cancel_one_invoice()
+                job = queue_obj.search([
+                    ('uuid', '=', new_delay.uuid)
                 ], limit=1)
-                invoice.sudo().invoice_jobs_ids |= queue_ids
+                invoice.sudo().invoice_jobs_ids |= job
 
     @api.multi
     def _cancel_invoice_jobs(self):
@@ -1194,7 +1191,9 @@ class AccountInvoice(models.Model):
             return 'E2'
         else:
             product_exempt_causes = self.mapped(
-                'invoice_line_ids.product_id.sii_exempt_cause'
+                'invoice_line_ids.product_id'
+            ).filtered(lambda x: x.sii_exempt_cause != 'none').mapped(
+                'sii_exempt_cause'
             )
             if product_exempt_causes:
                 return product_exempt_causes[0]
@@ -1294,18 +1293,12 @@ class AccountInvoice(models.Model):
         return -1.0 if self.sii_refund_type == 'I' and 'refund' in self.type \
             else 1.0
 
+    @job
+    @api.multi
+    def confirm_one_invoice(self):
+        self._send_invoice_to_sii()
 
-@job(default_channel='root.invoice_validate_sii')
-def confirm_one_invoice(session, model_name, invoice_id):
-    model = session.env[model_name]
-    invoice = model.browse(invoice_id)
-    if invoice.exists():
-        invoice._send_invoice_to_sii()
-
-
-@job(default_channel='root.invoice_validate_sii')
-def cancel_one_invoice(session, model_name, invoice_id):
-    model = session.env[model_name]
-    invoice = model.browse(invoice_id)
-    if invoice.exists():
-        invoice._cancel_invoice_to_sii()
+    @job
+    @api.multi
+    def cancel_one_invoice(self):
+        self._cancel_invoice_to_sii()
