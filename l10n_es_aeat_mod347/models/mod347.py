@@ -192,14 +192,18 @@ class L10nEsAeatMod347Report(models.Model):
             # FIXME: ugly group by reconciliation invoices, because there
             # isn't any direct relationship between payments and invoice
             invoices = []
-            if move_line.reconcile_id:
-                for line in move_line.reconcile_id.line_id:
-                    if line.invoice:
-                        invoices.append(line.invoice)
-            elif move_line.reconcile_partial_id:
-                for line in move_line.reconcile_partial_id.line_partial_ids:
-                    if line.invoice:
-                        invoices.append(line.invoice)
+            if move_line.full_reconcile_id:
+                for line in move_line.full_reconcile_id.reconciled_line_ids:
+                    if line.invoice_id:
+                        invoices.append(line.invoice_id)
+            elif move_line.matched_credit_ids:
+                for line in move_line.matched_credit_ids:
+                    if line.credit_move_id.invoice_id:
+                        invoices.append(line.credit_move_id.invoice_id)
+            elif move_line.matched_debit_ids:
+                for line in move_line.matched_debit_ids:
+                    if line.debit_move_id.invoice_id:
+                        invoices.append(line.debit_move_id.invoice_id)
             # Remove duplicates
             invoices = list(set(invoices))
             if invoices:
@@ -655,7 +659,7 @@ class L10nEsAeatMod347PartnerRecord(models.Model):
                 datetime(year, month_end, day_end)
             )
             return sum(records.filtered(
-                lambda x: date_start <= x.invoice_id.date <= date_end
+                lambda x: date_start <= x.move_line_id.date <= date_end
             ).mapped('amount'))
 
         for record in self:
