@@ -6,7 +6,7 @@
 #                - Pedro M. Baeza (http://www.serviciosbaeza.com)
 # Copyright 2016 - Tecnativa - Angel Moya <odoo@tecnativa.com>
 # Copyright 2017 - Tecnativa - Luis M. Ontalba <luis.martinez@tecnativa.com>
-# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+# License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import re
 from openerp import models, fields, api, exceptions, _
@@ -101,103 +101,176 @@ class Mod349(models.Model):
                 report.mapped('partner_refund_ids.total_operation_amount')
             )
 
-    def _create_349_partner_records(self, move_lines, partner,
-                                    operation_key):
+    def _create_349_invoice_records(self, move_lines):
         """creates partner records in 349"""
         rec_obj = self.env['l10n.es.aeat.mod349.partner_record']
-        partner_country = partner.country_id
-        sum_credit = sum([move_line.credit for move_line in
-                          move_lines])
-        sum_debit = sum([move_line.debit for move_line in
-                         move_lines])
-        record_created = rec_obj.create(
-            {'report_id': self.id,
-             'partner_id': partner.id,
-             'partner_vat': _format_partner_vat(partner_vat=partner.vat,
-                                                country=partner_country),
-             'operation_key': operation_key.id,
-             'country_id': partner_country.id or False,
-             'total_operation_amount': abs(sum_credit - sum_debit)
-             })
+        move_line_obj = self.env['account.move.line']
+        data = {}
         for move_line in move_lines:
-            if move_line.invoice_id.type not in ('in_refund', 'out_refund'):
-                balance = abs(move_line.balance)
-            else:
-                balance = -abs(move_line.balance)
-            detail_obj = self.env['l10n.es.aeat.mod349.partner_record_detail']
-            detail_obj.create({'partner_record_id': record_created.id,
-                               'move_line_id': move_line.id,
-                               'amount_untaxed': balance})
-        return record_created
-
-    def _create_349_refund_records(self, refund_lines, partner, operation_key):
-        """Creates restitution records in 349"""
-        partner_detail_obj = self.env[
-            'l10n.es.aeat.mod349.partner_record_detail']
-        obj = self.env['l10n.es.aeat.mod349.partner_refund']
-        obj_detail = self.env['l10n.es.aeat.mod349.partner_refund_detail']
-        partner_country = partner.country_id
-        origin_invoices = refund_lines.mapped('invoice_id.origin_invoice_ids')
-        refund_details = partner_detail_obj.search(
-            [('move_line_id.invoice_id', 'in', origin_invoices.ids),
-             ('partner_record_id.operation_key', '=', operation_key.id)])
-        if refund_details:
-            partner_record = refund_details[0].partner_record_id
-            obj_created = obj.create({
-                'report_id': self.id,
-                'partner_id': partner.id,
-                'partner_vat': _format_partner_vat(
-                    partner_vat=partner.vat, country=partner_country),
-                'operation_key': operation_key.id,
-                'country_id': partner_country.id,
-                'total_operation_amount': (
-                    partner_record.total_operation_amount - sum(
-                        [abs(x.balance) for x in refund_lines])),
-                'total_origin_amount': partner_record.total_operation_amount,
-                'period_type': partner_record.report_id.period_type,
-                'year': partner_record.report_id.year})
-            for refund_line in refund_lines:
-                obj_detail.create({
-                     'refund_id': obj_created.id,
-                     'refund_line_id': refund_line.id,
-                     'amount_untaxed': -refund_line.balance})
+            partner = move_line.partner_id
+            op_key = move_line.aeat_349_operation_key
+            if partner not in data.keys():
+                data[partner] = {}
+            if op_key not in data[partner].keys():
+                data[partner][op_key] = {
+                    'total_amount': 0.0,
+                    'move_lines': move_line_obj
+                }
+            partner_country = partner.country_id
+            data[partner][op_key]['total_amount'] += move_line.balance
+            data[partner][op_key]['move_lines'] += move_line
+        for partner in data.keys():
+            for op_key in data[partner].keys():
+                record_created = rec_obj.create(
+                    {'report_id': self.id,
+                     'partner_id': partner.id,
+                     'partner_vat': _format_partner_vat(
+                         partner_vat=partner.vat,
+                         country=partner_country),
+                     'operation_key': op_key.id,
+                     'country_id': partner_country.id or False,
+                     'total_operation_amount': abs(data[partner][op_key][
+                                                       'total_amount'])
+                     })
+                for move_line in data[partner][op_key]['move_lines']:
+                    if move_line.invoice_id.type not in (
+                            'in_refund', 'out_refund'):
+                        balance = abs(move_line.balance)
+                    else:
+                        balance = -abs(move_line.balance)
+                    detail_obj = self.env[
+                        'l10n.es.aeat.mod349.partner_record_detail']
+                    detail_obj.create({'partner_record_id': record_created.id,
+                                       'move_line_id': move_line.id,
+                                       'amount_untaxed': balance})
         return True
+
+    def _create_349_refund_records(self, move_lines, taxes):
+        """Creates restitution records in 349"""
+        detail_obj = self.env[
+            'l10n.es.aeat.mod349.partner_record_detail']
+
+        obj = self.env['l10n.es.aeat.mod349.partner_refund']
+        refund_detail_obj = self.env[
+            'l10n.es.aeat.mod349.partner_refund_detail']
+        move_line_obj = self.env['account.move.line']
+        data = {}
+        for move_line in move_lines:
+            partner = move_line.partner_id
+            partner_country = partner.country_id
+            op_key = move_line.aeat_349_operation_key
+            if partner not in data.keys():
+                # dict with operation keys
+                data[partner] = {}
+            if op_key not in data[partner].keys():
+                # dict with original invoices
+                data[partner][op_key] = {}
+
+            origin_invoices = move_line.invoice_id.mapped('origin_invoice_ids')
+            original_partner_record = detail_obj
+            if origin_invoices:
+                origin_invoice = origin_invoices[0]
+                original_detail = detail_obj.search(
+                    [('move_line_id.invoice_id', 'in', origin_invoice.ids),
+                     ('partner_record_id.operation_key', '=', op_key.id)],
+                    limit=1)
+                if original_detail:
+                    original_partner_record = original_detail.partner_record_id
+                    origin_amount = \
+                        original_partner_record.total_operation_amount
+                else:
+                    original_moves = move_line_obj.search(
+                        [('tax_ids', 'in', taxes.ids),
+                         ('aeat_349_operation_key', '=', op_key.id),
+                         ('invoice_id', 'in', origin_invoice.ids)])
+                    origin_amount = original_moves and original_moves[
+                        0].balance or 0.0
+                data[partner][op_key][origin_invoice] = {
+                    'original_amount': origin_amount,
+                    'rectified_amount': 0.0,
+                    'move_lines': move_line_obj,
+                }
+            else:
+                # TODO: Instead of continue, generate an empty record and a msg
+                continue
+            data[partner][op_key][origin_invoice][
+                'rectified_amount'] += abs(move_line.balance)
+            data[partner][op_key][origin_invoice]['move_lines'] += move_line
+
+        for partner in data.keys():
+            for op_key in data[partner].keys():
+                original_amount = 0.0
+                rectified_amount = 0.0
+                move_lines = move_line_obj
+                for invoice in data[partner][op_key].keys():
+                    invoice_data = data[partner][op_key][invoice]
+                    original_amount += invoice_data['original_amount']
+                    rectified_amount += invoice_data['rectified_amount']
+                    move_lines += invoice_data['move_lines']
+                obj_created = obj.create({
+                    'report_id': self.id,
+                    'partner_id': partner.id,
+                    'partner_vat': _format_partner_vat(
+                        partner_vat=partner.vat, country=partner_country),
+                    'operation_key': op_key.id,
+                    'country_id': partner_country.id,
+                    'total_operation_amount':
+                    original_amount - rectified_amount,
+                    'total_origin_amount': original_amount,
+                    'period_type':
+                    original_partner_record and
+                    original_partner_record.report_id.period_type or False,
+                    'year': original_partner_record and
+                    original_partner_record.report_id.year or False,
+                })
+                for move_line in move_lines:
+                    refund_detail_obj.create({
+                         'refund_id': obj_created.id,
+                         'refund_line_id': move_line.id,
+                         'amount_untaxed': -move_line.balance})
+        return True
+
+    def _account_move_line_domain(self, taxes):
+        # search move lines that contain these tax codes
+        return [('date', '>=', self.date_start),
+                ('date', '<=', self.date_end),
+                ('tax_ids', 'in', taxes.ids)]
+
+    def _get_account_moves(self, taxes):
+        aml_obj = self.env['account.move.line']
+        amls = aml_obj.search(self._account_move_line_domain(taxes))
+        return amls.mapped('move_id')
 
     @api.multi
     def calculate(self):
         """Computes the records in report."""
-        partner_obj = self.env['res.partner']
-        move_line_obj = self.env['account.move.line']
-        op_keys = self.env['aeat.349.map.line'].search([])
+        tax_obj = self.env['account.tax']
+        # Obtain all the taxes to be considered
+        map_lines = self.env['aeat.349.map.line'].search([])
+        tax_templates = map_lines.mapped('taxes').mapped('description')
+        if not tax_templates:
+            raise exceptions.Warning(_('No Tax Mapping was found'))
         for mod349 in self:
             # Remove previous partner records and partner refunds in report
             mod349.partner_record_ids.unlink()
             mod349.partner_refund_ids.unlink()
-            # Returns all commercial partners
-            partners = partner_obj.with_context(active_test=False).search(
-                [('parent_id', '=', False)])
-            for partner in partners:
-                for op_key in op_keys:
-                    # Move lines
-                    move_lines_total = (
-                        move_line_obj._get_move_lines_by_type(
-                            partner, op_key,
-                            mod349.date_start,
-                            mod349.date_end))
-                    # Separates normal move lines from restitution
-                    move_lines, refund_lines = (
-                        move_lines_total.clean_refund_move_lines(
-                            partner,
-                            mod349.date_start,
-                            mod349.date_end,))
-                    if move_lines:
-                        mod349._create_349_partner_records(move_lines,
-                                                           partner,
-                                                           op_key)
-                    if refund_lines:
-                        mod349._create_349_refund_records(refund_lines,
-                                                          partner,
-                                                          op_key)
+            # search the account.tax referred to by the template
+            taxes = tax_obj.search(
+                [('description', 'in', tax_templates),
+                 ('company_id', 'child_of', mod349.company_id.id)])
+            # Get all the account moves
+            moves = mod349._get_account_moves(taxes)
+            # Get all the move lines that have 349 operation keys
+            move_lines = moves.mapped('line_ids').filtered(
+                lambda x: x.aeat_349_operation_key)
+            # Separates normal move lines from restitution
+            refund_lines = move_lines.filtered(
+                lambda m: m.invoice_id.type in ('in_refund', 'out_refund'))
+            move_lines -= refund_lines
+            if move_lines:
+                mod349._create_349_invoice_records(move_lines)
+            if refund_lines:
+                mod349._create_349_refund_records(refund_lines, taxes)
         return True
 
     @api.multi

@@ -162,7 +162,7 @@
             <blockTable colWidths="8cm,2.5cm,3cm,3cm,2.5cm" style="DataLineTable">
                 <tr>
                     <td><para style="DataLine">[[partner_record.partner_id.name or '-----']]</para></td>
-                    <td><para style="DataLineCenter">[[partner_record.operation_key or '-']]</para></td>
+                    <td><para style="DataLineCenter">[[partner_record.operation_key.name or '-']]</para></td>
                     <td><para style="DataLine">[[partner_record.country_id.name or '-----']]</para></td>
                     <td><para style="DataLine">[[partner_record.partner_vat or '-----']]</para></td>
                     <td><para style="DataLineRight">[[partner_record.total_operation_amount and formatLang(partner_record.total_operation_amount) or 0.0]] [[report.company_id.currency_id.code]]</para></td>

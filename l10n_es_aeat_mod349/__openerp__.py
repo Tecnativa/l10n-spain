@@ -6,7 +6,7 @@
 #                     - Pedro M. Baeza (http://www.serviciosbaeza.com)
 # Copyright 2016 - Tecnativa - Angel Moya <odoo@tecnativa.com>
 # Copyright 2017 - Tecnativa - Luis M. Ontalba <luis.martinez@tecnativa.com>
-# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+# License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 {
     "name": "Modelo 349 AEAT",
@@ -35,6 +35,5 @@
         "security/ir.model.access.csv",
         "security/mod_349_security.xml",
     ],
-    'post_init_hook': 'post_init_hook',
     'installable': True,
 }
