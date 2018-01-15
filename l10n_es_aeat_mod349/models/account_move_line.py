@@ -24,4 +24,6 @@ class AccountMoveLine(models.Model):
             if line.tax_ids:
                 taxes = line.mapped('tax_ids').filtered(
                     lambda x: x.aeat_349_operation_key)
-                line.aeat_349_operation_key = taxes[0].aeat_349_operation_key
+                if taxes:
+                    line.aeat_349_operation_key = \
+                        taxes[0].aeat_349_operation_key

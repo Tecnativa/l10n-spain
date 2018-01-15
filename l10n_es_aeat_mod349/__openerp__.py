@@ -10,10 +10,11 @@
 
 {
     "name": "Modelo 349 AEAT",
-    "version": "9.0.1.1.0",
+    "version": "9.0.2.0.0",
     "author": "Pexego, "
               "Top Consultant, "
               "Tecnativa,"
+              "Eficent,"
               "Odoo Community Association (OCA)",
     "license": "AGPL-3",
     "category": 'Localisation/Accounting',
@@ -31,7 +32,9 @@
         "views/account_tax_view.xml",
         "views/aeat_349_map_view.xml",
         "views/mod349_view.xml",
-        "report/mod349_report.xml",
+        'report/common_templates.xml',
+        "report/aeat_mod349.xml",
+        "report/report_views.xml",
         "security/ir.model.access.csv",
         "security/mod_349_security.xml",
     ],
