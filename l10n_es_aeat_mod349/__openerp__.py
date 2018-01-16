@@ -6,6 +6,8 @@
 #                     - Pedro M. Baeza (http://www.serviciosbaeza.com)
 # Copyright 2016 - Tecnativa - Angel Moya <odoo@tecnativa.com>
 # Copyright 2017 - Tecnativa - Luis M. Ontalba <luis.martinez@tecnativa.com>
+# Copyright 2017 - Eficent Business and IT Consulting Services, S.L.
+#                  <contact@eficent.com>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 {
@@ -13,14 +15,13 @@
     "version": "9.0.2.0.0",
     "author": "Pexego, "
               "Top Consultant, "
-              "Tecnativa,"
-              "Eficent,"
+              "Tecnativa, "
+              "Eficent, "
               "Odoo Community Association (OCA)",
     "license": "AGPL-3",
     "category": 'Localisation/Accounting',
     'website': 'https://github.com/OCA/l10n-spain',
     "depends": [
-        "account_invoice_refund_link",
         "l10n_es_aeat",
         "l10n_es",
     ],

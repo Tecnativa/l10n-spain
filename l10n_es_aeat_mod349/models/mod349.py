@@ -6,6 +6,8 @@
 #                - Pedro M. Baeza (http://www.serviciosbaeza.com)
 # Copyright 2016 - Tecnativa - Angel Moya <odoo@tecnativa.com>
 # Copyright 2017 - Tecnativa - Luis M. Ontalba <luis.martinez@tecnativa.com>
+# Copyright 2017 - Eficent Business and IT Consulting Services, S.L.
+#                  <contact@eficent.com>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import re

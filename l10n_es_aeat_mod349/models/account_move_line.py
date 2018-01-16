@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2017 Luis M. Ontalba <luis.martinez@tecnativa.com>
+# Copyright 2017 - Eficent Business and IT Consulting Services, S.L.
+#                  <contact@eficent.com>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 from openerp import api, fields, models

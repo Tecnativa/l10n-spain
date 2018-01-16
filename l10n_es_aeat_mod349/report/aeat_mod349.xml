@@ -5,14 +5,17 @@
         <t t-call="report.html_container">
             <div class="page">
                 <div class="row">
-                  <div class="col-xs-12 text-center" id="title">
-                      <h3>AEAT MODEL 349</h3>
-                  </div>
+                    <div class="col-xs-12 text-center" id="title">
+                        <h4>Form 349. Information Return. Recapitulatory
+                            return of intracommunity transactions.</h4>
+                    </div>
                     <t t-call="l10n_es_aeat_mod349.mod349_summary"/>
-                  <div class="col-xs-12"
-                       id="title_partner_records">
-                    <h4>Partner records</h4>
-                  </div>
+                    <div/>
+                    <newline/>
+                    <div class="col-xs-12"
+                         id="title_partner_records">
+                        <h4>Partner records</h4>
+                    </div>
                     <div class="col-xs-12"
                        id="partner_record_detail_div">
                     <table class="table table-condensed"
@@ -24,22 +27,22 @@
                             </tr>
                         </tbody>
                     </table>
-                  </div>
-                  <div class="col-xs-12" id="title_refund_records">
-                    <h4>Refund records</h4>
-                  </div>
-                  <div class="col-xs-12" id="div_refund_records">
-                      <table class="table table-condensed"
-                             id="partner_refund_table">
-                          <t t-call="l10n_es_aeat_mod349.mod349_partner_refund_head"/>
-                          <tbody>
-                            <tr t-foreach="o.partner_refund_ids"
-                                t-as="l">
-                                <t t-call="l10n_es_aeat_mod349.mod349_refund_record"/>
-                            </tr>
-                          </tbody>
-                      </table>
-                  </div>
+                    </div>
+                    <newline/>
+                    <div class="col-xs-12" id="title_refund_records">
+                        <h4>Refund records</h4>
+                    </div>
+                    <div class="col-xs-12" id="div_refund_records">
+                        <table class="table table-condensed"
+                               id="partner_refund_table">
+                            <t t-call="l10n_es_aeat_mod349.mod349_partner_refund_head"/>
+                            <tbody>
+                                <tr t-foreach="o.partner_refund_ids" t-as="l">
+                                    <t t-call="l10n_es_aeat_mod349.mod349_refund_record"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </t>
