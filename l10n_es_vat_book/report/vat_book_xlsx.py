@@ -275,7 +275,7 @@ class VatNumberXlsx(ReportXlsx):
                     # Clave de operación
                     col += 1
                     # Total factura
-                    base_imponible = sum(x.base_amount for x in lines_all)
+                    subjected_base = sum(lines_all.mapped('base_amount'))
                     cuota_rep = sum(x.tax_amount for x in lines_all)
                     cuota_rec_eq = (tax_dest_id and tax_dest_id.tax_amount) or 0
                     total_factura = base_imponible + cuota_rep + cuota_rec_eq
