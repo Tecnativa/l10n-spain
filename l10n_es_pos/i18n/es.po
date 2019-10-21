@@ -6,27 +6,21 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 11.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-04-23 08:57+0000\n"
-"PO-Revision-Date: 2019-04-23 08:52+0000\n"
+"POT-Creation-Date: 2019-10-21 12:40+0000\n"
+"PO-Revision-Date: 2019-10-21 14:41+0200\n"
 "Last-Translator: <>\n"
 "Language-Team: \n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: \n"
+"Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: \n"
+"Language: en\n"
+"X-Generator: Poedit 2.2.1\n"
 
 #. module: l10n_es_pos
 #: model:ir.ui.view,arch_db:l10n_es_pos.view_pos_config_form
 msgid "Above this limit the simplified invoice won't be made"
 msgstr "Por encima de este límite no se creará factura simplificada"
-
-#. module: l10n_es_pos
-#. openerp-web
-#: code:addons/l10n_es_pos/static/src/xml/pos.xml:69
-#, python-format
-msgid "Address:"
-msgstr "Dirección:"
 
 #. module: l10n_es_pos
 #: model:ir.model.fields,help:l10n_es_pos.field_pos_config_l10n_es_simplified_invoice_sequence_id
@@ -35,10 +29,17 @@ msgstr "Autogenerada por cada TPV creado"
 
 #. module: l10n_es_pos
 #. openerp-web
-#: code:addons/l10n_es_pos/static/src/xml/pos.xml:67
+#: code:addons/l10n_es_pos/static/src/js/models.js:156
 #, python-format
-msgid "Customer data"
-msgstr "Datos de cliente"
+msgid "BASE"
+msgstr "BASE"
+
+#. module: l10n_es_pos
+#. openerp-web
+#: code:addons/l10n_es_pos/static/src/xml/pos.xml:68
+#, python-format
+msgid "CUSTOMER DATA:"
+msgstr "DATOS DE CLIENTE:"
 
 #. module: l10n_es_pos
 #. openerp-web
@@ -48,16 +49,16 @@ msgid "Customer:"
 msgstr "Cliente:"
 
 #. module: l10n_es_pos
+#. openerp-web
+#: code:addons/l10n_es_pos/static/src/xml/pos.xml:136
+#, python-format
+msgid "DETAIL"
+msgstr "DETALLE"
+
+#. module: l10n_es_pos
 #: model:ir.ui.view,arch_db:l10n_es_pos.view_pos_order_filter_simplified_invoice
 msgid "Invoices"
 msgstr "Facturas"
-
-#. module: l10n_es_pos
-#. openerp-web
-#: code:addons/l10n_es_pos/static/src/xml/pos.xml:67
-#, python-format
-msgid "Name:"
-msgstr "Nombre:"
 
 #. module: l10n_es_pos
 #: model:ir.model.fields,help:l10n_es_pos.field_pos_config_l10n_es_simplified_invoice_limit
@@ -74,7 +75,14 @@ msgstr "Pedidos del Punto de Venta"
 #: code:addons/l10n_es_pos/static/src/xml/pos.xml:40
 #, python-format
 msgid "Product"
-msgstr "Product"
+msgstr "Producto\t"
+
+#. module: l10n_es_pos
+#. openerp-web
+#: code:addons/l10n_es_pos/static/src/js/models.js:157
+#, python-format
+msgid "QUOTA"
+msgstr "CUOTA"
 
 #. module: l10n_es_pos
 #. openerp-web
@@ -158,14 +166,24 @@ msgid "Subt"
 msgstr "Subt"
 
 #. module: l10n_es_pos
+#. openerp-web
+#: code:addons/l10n_es_pos/static/src/js/models.js:155
+#, python-format
+msgid "TAX"
+msgstr "IMPUESTO"
+
+#. module: l10n_es_pos
+#. openerp-web
+#: code:addons/l10n_es_pos/static/src/xml/pos.xml:155
+#, python-format
+msgid "TOTAL"
+msgstr "TOTAL"
+
+#. module: l10n_es_pos
 #: code:addons/l10n_es_pos/models/ir_sequence.py:20
 #, python-format
-msgid ""
-"There is already a simplified invoice sequence with that prefix and it "
-"should be unique."
-msgstr ""
-"Ya existe una secuencia de Factura Simplificada con ese prefijo y este "
-"debería ser único."
+msgid "There is already a simplified invoice sequence with that prefix and it should be unique."
+msgstr "Ya existe una secuencia de Factura Simplificada con ese prefijo y este debería ser único."
 
 #. module: l10n_es_pos
 #: model:ir.model.fields,field_description:l10n_es_pos.field_pos_order_l10n_es_unique_id
@@ -188,7 +206,7 @@ msgstr "Usar Facturas Simplificadas en este Punto de Venta"
 #. openerp-web
 #: code:addons/l10n_es_pos/static/src/xml/pos.xml:12
 #: code:addons/l10n_es_pos/static/src/xml/pos.xml:29
-#: code:addons/l10n_es_pos/static/src/xml/pos.xml:68
+#: code:addons/l10n_es_pos/static/src/xml/pos.xml:71
 #, python-format
 msgid "VAT:"
 msgstr "NIF/CIF:"
@@ -201,7 +219,6 @@ msgstr "ir.sequence"
 #. module: l10n_es_pos
 #. openerp-web
 #: code:addons/l10n_es_pos/static/src/xml/pos.xml:51
-#: code:addons/l10n_es_pos/static/src/xml/pos.xml:73
 #, python-format
 msgid "on"
 msgstr "sobre"
@@ -210,13 +227,3 @@ msgstr "sobre"
 #: model:ir.model,name:l10n_es_pos.model_pos_config
 msgid "pos.config"
 msgstr "pos.config"
-
-#~ msgid ""
-#~ "The current order is already queued and thus it shouldn't be changed. "
-#~ "Click on 'Validate' in order to finalize it."
-#~ msgstr ""
-#~ "Este pedido ya está en cola, de modo que no debería modificarse. Pulsa en "
-#~ "'Validar' para finalizarlo."
-
-#~ msgid "The order is already queued"
-#~ msgstr "El pedido ya está en cola"

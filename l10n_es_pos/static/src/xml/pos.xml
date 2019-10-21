@@ -4,7 +4,7 @@
     <t t-extend="PosTicket">
         <t t-jquery="t[t-esc='order.name']" t-operation="before">
             <t t-if="widget.pos.config.iface_l10n_es_simplified_invoice and !order.is_to_invoice()">
-                <br/><span>Simplified invoice: </span>
+                <br/><span>Simplified invoice: </span>   
             </t>
         </t>
         <t t-jquery="t[t-esc='widget.pos.company.name']" t-operation="after">
@@ -56,23 +56,129 @@
     <t t-extend="XmlReceipt">
         <t t-jquery="[t-if='!receipt.company.logo']" t-operation="after">
             <t t-if="widget.pos.config.iface_l10n_es_simplified_invoice and !order.is_to_invoice()">
-            <br/>
-                Simplified invoice <t t-esc="order.simplified_invoice"/>
-            <br/>
+                <span bold="on">Simplified invoice <t t-esc="receipt.name"/></span>
+                <br/>
+                <t t-esc='receipt.date.localestring'/>
+                <br/><br/>
             </t>
         </t>
-        <t t-jquery="[t-if='receipt.header_xml']" t-operation="after">
-             <t t-if="order.get_client()">
-                 <br/>
-                    <span class="customer_title">Customer data</span><br />
-                    Name: <t t-esc="order.get_client().name ? order.get_client().name : ''"/><br />
-                    VAT: <t t-esc="order.get_client().vat ? order.get_client().vat : ''"/><br />
-                    Address: <t t-esc="order.get_client().address ? order.get_client().address : ''"/>
-             </t>
+        <t t-jquery="t[t-foreach='receipt.orderlines']:parent" t-operation="before">
+            <t t-set="customer_data" t-value="order.get_client()"/>
+            <t t-if="customer_data">
+                <span font="b" align="right">CUSTOMER DATA:</span><br/>
+                <div align='left' font="a" size="normal" bold="on">
+                    <span underline="on"><t t-esc="customer_data.name ? customer_data.name : ''"/></span><br />
+                    <t t-if="customer_data.vat">
+                        VAT: <t t-esc="customer_data.vat" /><br />
+                    </t>
+                    <t t-if="customer_data.street">
+                        <t t-esc="customer_data.street" /><br />
+                    </t>
+                    <t t-if="customer_data.zip" t-esc="customer_data.zip + ' '"/>
+                    <t t-if="customer_data.city" t-esc="customer_data.city + ' '"/>
+                    <t t-if="customer_data.state_id" t-esc="'(' + customer_data.state_id[1] + ')'"/>
+                    <t t-if="customer_data.country_id" t-esc="' ' + customer_data.country_id[1].toUpperCase()"/>
+                </div>
+                <br/><br/>
+            </t>
         </t>
-        <t t-jquery="t[t-esc='tax.name']" t-operation="after">
-            on <t t-esc="widget.format_currency(order.get_base_by_tax()[tax.tax.id])" />
+        <!-- Product header -->
+        <t t-jquery="div[class='orderlines']" t-operation="before">
+            <div align="center" width="40" line-ratio='0.6' underline="on" bold="on">
+            <line>
+            <left>
+                    <pre><t t-esc="widget.padEnd(widget.product_table_column_header()['th_qty'], 8, fillString='*') + widget.padStart(widget.product_table_column_header()['th_product'], 8, fillString='*') + widget.padStart(widget.product_table_column_header()['th_unit'], 8, fillString='*')"/></pre>
+                    </left>
+                    <right>
+                    <pre><t t-esc="widget.padStart(widget.product_table_column_header()['th_subtl'], 16, fillString='*')"/></pre>
+                    </right>
+                    </line>
+            </div>
+
+                   <!-- Orderlines -->
+
+        <div class='orderlines' line-ratio='0.6'>
+            <t t-foreach='receipt.orderlines' t-as='line'>
+                <t t-set='line_qty_str' t-value="line.quantity and line.quantity.toString().length"/>
+                <t t-set='simple' t-value='line.discount === 0 and line.unit_name === "Unidad(es)" and line_qty &lt; 4' />
+                <t t-if='simple'>
+                    <line>
+                        <left>
+                            <value t-att-value-decimals='pos.dp["Product Unit of Measure"]' value-autoint='on'>
+                                <t t-esc='line.quantity' />
+                            </value>
+                            <t t-esc='line.product_name_wrapped[0]'/>
+                            <value t-att-value-decimals='pos.dp["Product Price"]' t-if="line.quantity !== 1">
+                                <t t-esc='line.price' />
+                            </value>
+                            </left>
+                        <right><value t-att-value-decimals='pos.currency.decimals'><t t-esc='line.price_display' /></value></right>
+                    </line>
+                    <t t-call="XmlReceiptWrappedProductNameLines"/>
+                </t>
+                <t t-if='!simple'>
+                    <line><left><t t-esc='line.product_name_wrapped[0]' /></left></line>
+                    <t t-call="XmlReceiptWrappedProductNameLines"/>
+                    <t t-if='line.discount !== 0'>
+                        <line indent='1'><left>Discount: <t t-esc='line.discount' />%</left></line>
+                    </t>
+                    <line indent='1'>
+                        <left>
+                            <value t-att-value-decimals='pos.dp["Product Unit of Measure"]' value-autoint='on'>
+                                <t t-esc='line.quantity' />
+                            </value>
+                            <t t-if='line.unit_name !== "Unit(s)"'>
+                                <t t-esc='line.unit_name' /> 
+                            </t>
+                            x 
+                            <value t-att-value-decimals='pos.dp["Product Price"]'>
+                                <t t-esc='line.price' />
+                            </value>
+                        </left>
+                        <right>
+                            <value t-att-value-decimals='pos.currency.decimals'><t t-esc='line.price_display' /></value>
+                        </right>
+                    </line>
+                </t>
+            </t>
+        </div>
+        <!-- orderlines -->
         </t>
+
+ 
+
+        <!-- Tax table -->
+        <t t-jquery="t[t-foreach='receipt.tax_details']" t-operation="replace"/>
+        <t t-jquery="div[class='before-footer']" t-operation="before">
+            <line align="left" indent="2">
+                <left>
+                    <pre>DETAIL
+                    </pre>
+                </left>
+            </line>
+            <div align="center" width="40" line-ratio='0.35' underline="on" bold="on">
+                <pre><t t-esc="widget.padEnd(widget.tax_table_column_header()['th_tax'], 14) + widget.padStart(widget.tax_table_column_header()['th_base'], 13) + widget.padStart(widget.tax_table_column_header()['th_quota'], 13)"/></pre>
+            </div>
+            <t t-foreach='receipt.tax_details' t-as='tax'>
+                <line width="40" line-ratio='0.35' align="center">
+                    <left>
+                        <pre><t t-esc='widget.padEnd(widget.abbreviate_tax(tax.name), 14)'/></pre>
+                    </left>
+                    <right>
+                        <pre><t t-esc="widget.padStart(widget.format_currency_no_symbol(order.get_base_by_tax()[tax.tax.id]), 13)"/></pre>
+                        <pre><t t-esc="widget.padStart(widget.format_currency_no_symbol(tax.amount), 11)"/></pre>
+                    </right>
+                </line>
+            </t>
+            <line width="40" line-ratio='0.35' align="center" bold="on">
+                <left>TOTAL</left>
+                <right>
+                    <pre><t t-esc="widget.padStart(widget.format_currency_no_symbol(order.get_total_without_tax()), 13)"/></pre>
+                    <pre><t t-esc="widget.padStart(widget.format_currency_no_symbol(receipt.total_tax), 11)"/></pre>
+                </right>
+            </line>
+        </t>
+        <t t-jquery="t[t-if='taxincluded'] > line" t-operation="replace"/>
     </t>
 
 </templates>

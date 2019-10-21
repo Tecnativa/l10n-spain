@@ -7,6 +7,8 @@ odoo.define('l10n_es_pos.models', function (require) {
     "use strict";
 
     var models = require('point_of_sale.models');
+    var BaseWidget = require('point_of_sale.BaseWidget');
+    var _t  = require('web.core')._t;
 
     var pos_super = models.PosModel.prototype;
     models.PosModel = models.PosModel.extend({
@@ -100,5 +102,70 @@ odoo.define('l10n_es_pos.models', function (require) {
     });
 
     models.load_fields('res.company', ['street', 'city', 'state_id', 'zip']);
+    models.load_fields('account.tax', ['description']);
+
+    /* Include some tools to easy format XmlReceipt */
+    BaseWidget.include({
+        // Pollyfill of https://github.com/tc39/proposal-string-pad-start-end
+        padStart: function (S, intMaxLength, fillString = ' ') {
+            var stringLength = S.length;
+            if (intMaxLength <= stringLength) { return S; }
+            var filler = typeof fillString === 'undefined' ? ' ' : String(fillString);
+            if (filler === '') { return S; }
+            var fillLen = intMaxLength - stringLength;
+            while (filler.length < fillLen) {
+                var fLen = filler.length;
+                var remainingCodeUnits = fillLen - fLen;
+                if (fLen > remainingCodeUnits) {
+                    filler += filler.slice(0, remainingCodeUnits);
+                } else {
+                    filler += filler;
+                }
+            }
+            var truncatedStringFiller = filler.slice(0, fillLen);
+            return truncatedStringFiller + S;
+        },
+        // Pollyfill of https://github.com/tc39/proposal-string-pad-start-end
+        padEnd: function (S, intMaxLength, fillString=' ') {
+            var stringLength = S.length;
+            if (intMaxLength <= stringLength) { return S; }
+            var filler = typeof fillString === 'undefined' ? ' ' : String(fillString);
+            if (filler === '') { return S; }
+            var fillLen = intMaxLength - stringLength;
+            while (filler.length < fillLen) {
+                var fLen = filler.length;
+                var remainingCodeUnits = fillLen - fLen;
+                if (fLen > remainingCodeUnits) {
+                    filler += filler.slice(0, remainingCodeUnits);
+                } else {
+                    filler += filler;
+                }
+            }
+            var truncatedStringFiller = filler.slice(0, fillLen);
+            return S + truncatedStringFiller;
+        },
+        // In the Tax table present taxes with their essential names
+        // E.g.: IVA 21% (Bienes) => IVA 21% (B)
+        // E.g.: 0.5% Recargo de Equivalencia Ventas => 0.5% R E V
+        abbreviate_tax: function (tax_name) {
+            return tax_name.replace(/[^0-9%\.IVARE \(SB\)]+/g, "");
+        },
+        // Obtain a transalated tax headers that can be padded
+        tax_table_column_header: function () {
+            return {
+                'th_tax': _t('TAX'),
+                'th_base': _t('BASE'),
+                'th_quota': _t('QUOTA'),
+            }
+        },
+        product_table_column_header: function () {
+            return {
+                'th_product': _t('Prod.'),
+                'th_qty': _t('Qty'),
+                'th_unit': _t('Price/U.'),
+                'th_subtl': _t('Subtl.'),
+            }
+        },
+    });
 
 });
