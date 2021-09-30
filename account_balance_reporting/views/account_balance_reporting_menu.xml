@@ -13,12 +13,6 @@
             parent="account.final_accounting_reports"
             action="action_view_account_balance_reporting"/>
 
-        <delete model="ir.ui.menu" id="account.menu_account_report_bs"/>
-        <delete model="ir.ui.menu" id="account.menu_account_report_pl"/>
-        <delete model="ir.ui.menu" id="account.menu_account_report"/>
-        <delete model="ir.ui.menu" id="account.menu_account_report_tree_hierarchy"/>
-        <delete model="ir.ui.menu" id="account.menu_account_financial_reports_tree"/>
-
     </data>
 </openerp>
 
