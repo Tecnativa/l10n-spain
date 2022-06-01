@@ -1,6 +1,6 @@
 # Copyright 2020 Trey, Kilobytes de Soluciones
 # Copyright 2020 FactorLibre
-# Copyright 2021 Tecnativa - Víctor Martínez
+# Copyright 2021-2022 Tecnativa - Víctor Martínez
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 import base64
 import logging
@@ -121,10 +121,15 @@ class DeliveryCarrier(models.Model):
         """
         return label
 
+    def _seur_prepare_create_shipping(self, seur_request):
+        return seur_request._prepare_create_shipping()
+
     def seur_create_shipping(self, picking):
         self.ensure_one()
         seur_request = SeurRequest(self, picking)
-        res = seur_request.create_shipping()
+        res = seur_request.create_shipping(
+            self._seur_prepare_create_shipping(seur_request)
+        )
         # The error message could be more complex than a simple 'ERROR' sting.
         # For example, if there's wrong address info, it will return an
         # xml with the API error.

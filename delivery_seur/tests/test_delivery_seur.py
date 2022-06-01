@@ -1,16 +1,29 @@
 # Copyright 2020 Trey, Kilobytes de Soluciones
 # Copyright 2020 FactorLibre
-# Copyright 2021 Tecnativa - Víctor Martínez
+# Copyright 2021-2022 Tecnativa - Víctor Martínez
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 from odoo.tests import Form, common
 
 
-class TestDeliverySeur(common.SavepointCase):
+class TestDeliverySeurBase(common.SavepointCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.carrier = cls.env["delivery.carrier"].search(
-            [("delivery_type", "=", "seur")]
+        product_shipping_cost = cls.env["product.product"].create(
+            {
+                "type": "service",
+                "name": "Shipping costs",
+                "standard_price": 10,
+                "list_price": 100,
+            }
+        )
+        cls.carrier = cls.env["delivery.carrier"].create(
+            {
+                "name": "SEUR",
+                "delivery_type": "seur",
+                "product_id": product_shipping_cost.id,
+                "price_method": "fixed",
+            }
         )
         cls.company = cls.env.company
         cls.company.country_id = cls.env.ref("base.es").id
@@ -48,6 +61,8 @@ class TestDeliverySeur(common.SavepointCase):
         sale.action_confirm()
         return sale
 
+
+class TestDeliverySeur(TestDeliverySeurBase):
     def test_soap_connection(self):
         if not self.carrier or self.carrier.prod_environment:
             self.skipTest("Without SEUR credentials")

@@ -177,8 +177,7 @@ class SeurRequest(object):
             "et": "N",
         }
 
-    def create_shipping(self):
-        package_info = self._prepare_create_shipping()
+    def create_shipping(self, package_info):
         if self.label_format == "txt":
             return self.soap_send(
                 "ImprimirECBWebService",
