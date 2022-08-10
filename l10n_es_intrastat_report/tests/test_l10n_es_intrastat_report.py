@@ -1,7 +1,9 @@
 # Copyright 2021 Tecnativa - João Marques
+# Copyright 2022 Tecnativa - Víctor Martínez
 
 from datetime import datetime
 
+from odoo import _
 from odoo.tests.common import Form, SavepointCase
 
 
@@ -78,17 +80,21 @@ class TestL10nIntraStatReport(SavepointCase):
             if line.src_dest_country_id == self.env.ref("base.pt"):
                 self.assertEquals(line.suppl_unit_qty, pt_qty)
 
-    def test_report_creation_dispatches(self):
-        # Generate report
-        report_dispatches = self.env["l10n.es.intrastat.product.declaration"].create(
+    def _create_declaration(self, dec_type):
+        report = self.env["l10n.es.intrastat.product.declaration"].create(
             {
                 "year": datetime.today().year,
                 "month": str(datetime.today().month).zfill(2),
-                "type": "dispatches",
+                "type": dec_type,
                 "action": "replace",
             }
         )
-        report_dispatches.action_gather()
+        report.action_gather()
+        return report
+
+    def test_report_creation_dispatches(self):
+        # Generate report
+        report_dispatches = self._create_declaration("dispatches")
         self._check_move_lines_present(
             self.invoices["dispatches"]["invoices"],
             report_dispatches.computation_line_ids,
@@ -114,17 +120,20 @@ class TestL10nIntraStatReport(SavepointCase):
             self.assertTrue(items[0] in ("PT", "FR"))
             self.assertEquals(items[6], self.env["hs.code"].browse(1).local_code)
 
+    def test_report_creation_dispatches_notes(self):
+        self.product.origin_country_id = False
+        report_dispatches = self._create_declaration("dispatches")
+        invoice_0 = self.invoices["dispatches"]["invoices"][0]
+        vat_note = _("Missing partner vat on invoice %s.") % invoice_0.name
+        self.assertTrue(vat_note in report_dispatches.note)
+        origin_note = (
+            _("Missing origin country on product %s.") % self.product.name_get()[0][1]
+        )
+        self.assertTrue(origin_note in report_dispatches.note)
+
     def test_report_creation_arrivals(self):
         # Generate report
-        report_arrivals = self.env["l10n.es.intrastat.product.declaration"].create(
-            {
-                "year": datetime.today().year,
-                "month": str(datetime.today().month).zfill(2),
-                "type": "arrivals",
-                "action": "replace",
-            }
-        )
-        report_arrivals.action_gather()
+        report_arrivals = self._create_declaration("arrivals")
         self._check_move_lines_present(
             self.invoices["arrivals"]["invoices"], report_arrivals.computation_line_ids
         )
