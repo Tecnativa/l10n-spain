@@ -83,6 +83,7 @@ class AccountStatementImport(models.TransientModel):
     def _process_record_22(self, line):
         """22 - Registro principal de movimiento (obligatorio)"""
         st_line = {
+            "tipo_movimiento": line[2:6],
             "of_origen": line[6:10],
             "fecha_oper": datetime.strptime(line[10:16], "%y%m%d"),
             "fecha_valor": datetime.strptime(line[16:22], "%y%m%d"),
@@ -102,24 +103,32 @@ class AccountStatementImport(models.TransientModel):
         """23 - Registros complementarios de concepto (opcionales y hasta un
         máximo de 5)"""
         conceptos = st_line.setdefault("conceptos", {})
-        if line[2:4] == "01":
-            conceptos[line[2:4]] = (line[4:70].strip(), line[70:].strip())
-        if line[2:4] == "02":
+        tipo_movimiento = st_line.get("tipo_movimiento", "")
+        if tipo_movimiento == "TRSE":  # Transferencias SEPA
+            if line[2:4] == "01":
+                st_line["partner_name"] = line[4:70]  # Nombre del Ordenante (AT-02)
+                # Código del Ordenante (AT-10)
+                st_line["partner_id"] = self._match_vat(line[70:80])
+        elif tipo_movimiento == "ADSE":  # Adeudos SEPA
+            pass
+        elif tipo_movimiento == "TINT":  # Transferencias NO SEPA
+            pass
+        elif tipo_movimiento == "TRAS":  # Traspasos y transferencias internas
+            pass
+        elif tipo_movimiento == "CHIN":  # Cheques internacionales
+            pass
+        elif tipo_movimiento == "SCCK":  # Efectos compensados
+            pass
+        elif tipo_movimiento == "CBAN":  # Cheques bancarios emitidos
+            pass
+        elif tipo_movimiento == "CCCC":  # Cheques cuenta corriente
+            pass
+        elif tipo_movimiento == "EFEC":  # Operaciones de efectivo
+            pass
+        elif tipo_movimiento == "TARJ":  # Operaciones con tarjetas
+            pass
+        else:
             conceptos[line[2:4]] = (line[4:39].strip(), line[39:].strip())
-        if line[2:4] == "03":
-            conceptos[line[2:4]] = (
-                line[4:8].strip(),
-                line[8:12].strip(),
-                line[12:].strip(),
-            )
-        if line[2:4] == "04":
-            conceptos[line[2:4]] = (line[4:76].strip(), line[76:].strip())
-        if line[2:4] == "05":
-            conceptos[line[2:4]] = (
-                line[4:6].strip(),
-                line[6:40].strip(),
-                line[40:].strip(),
-            )
         return st_line
 
     def _process_record_24(self, st_line, line):
