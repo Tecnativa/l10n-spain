@@ -18,14 +18,18 @@ from odoo.addons.l10n_es_aeat.tests.test_l10n_es_aeat_certificate import (
 
 
 class CommonTestBase(TestL10nEsAeatCertificateBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # We want to avoid testing on the CommonTest class
-        if (
-            self.test_class == "CommonTest"
-            and self.__module__ == "odoo.addons.l10n_es_facturae.tests.common"
-        ):
-            self.test_tags -= {"at_install"}
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     # We want to avoid testing on the CommonTest class
+    #     print({
+    #         'self.test_class': self.test_class,
+    #         'self.__module__': self.__module__,
+    #     })
+    #     if (
+    #         self.test_class == "CommonTest"
+    #         and self.__module__ == "odoo.addons.l10n_es_facturae.tests.common"
+    #     ):
+    #         self.test_tags -= {"at_install"}
 
     @classmethod
     def setUpClass(cls):
@@ -149,8 +153,9 @@ class CommonTestBase(TestL10nEsAeatCertificateBase):
             {
                 "company_id": main_company.id,
                 "name": "Facturae Product account",
-                "code": "facturae_product",
-                "user_type_id": self.env.ref("account.data_account_type_revenue").id,
+                "code": "facturaeproduct",
+                # "user_type_id": self.env.ref("account.data_account_type_revenue").id,
+                "account_type": "income"
             }
         )
         self.move = self.env["account.move"].create(
@@ -609,6 +614,8 @@ class CommonTest(CommonTestBase):
     def _check_totals(self, move, subtotal, base, tax, total):
         move.action_post()
         move.name = "2999/99999"
+        move.facturae_withheld_reason = "WithholdingReason"
+        move.facturae_withheld_percent = 0.10
         generated_facturae = self._create_facturae_file(move)
         self.assertEqual(
             generated_facturae.xpath("//InvoiceTotals/TotalGrossAmount")[0].text,
@@ -628,6 +635,28 @@ class CommonTest(CommonTestBase):
             generated_facturae.xpath("//InvoiceTotals//InvoiceTotal")[0].text,
             total,
         )
+        self.assertEqual(
+            generated_facturae.xpath("//InvoiceTotals//InvoiceTotal")[0].text,
+            total,
+        )
+        self.assertEqual(
+            generated_facturae.xpath(
+                "//InvoiceTotals//AmountsWithheld//WithholdingReason"
+            )[0].text,
+            "WithholdingReason",
+        )
+        self.assertEqual(
+            generated_facturae.xpath(
+                "//InvoiceTotals//AmountsWithheld//WithholdingRate"
+            )[0].text,
+            10,
+        )
+        # self.assertEqual(
+        #     generated_facturae.xpath(
+        #         "//InvoiceTotals//AmountsWithheld//WithholdingAmount"
+        #     )[0].text,
+        #     base * 10,
+        # )
 
     def test_move_rounding(self):
         self._activate_certificate(self.certificate_password)

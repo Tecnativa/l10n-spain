@@ -492,7 +492,13 @@
                             t-out="('%.2f' if version == '3_2' else '%.8f') % move.amount_total"
                         />
                         <TotalPaymentsOnAccount t-if="False" />
-                        <AmountsWithheld t-if="False" />
+                        <AmountsWithheld t-if="move.facturae_withheld_reason">
+                            <WithholdingReason t-out="move.facturae_withheld_reason" />
+                            <WithholdingRate
+                                t-out="move.facturae_withheld_percent * 100"
+                            />
+                            <WithholdingAmount t-out="move.facturae_withheld_amount" />
+                        </AmountsWithheld>
                         <TotalExecutableAmount
                             t-out="('%.2f' if version == '3_2' else '%.8f') % move.amount_total"
                         />

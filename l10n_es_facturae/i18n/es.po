@@ -963,6 +963,27 @@ msgid "Vat must be defined for factura-e enabled partners."
 msgstr "El iva debe definirse para los socios habilitados para factura-e."
 
 #. module: l10n_es_facturae
+#: model:ir.model.fields,field_description:l10n_es_facturae.field_account_bank_statement_line__facturae_withheld_amount
+#: model:ir.model.fields,field_description:l10n_es_facturae.field_account_move__facturae_withheld_amount
+#: model:ir.model.fields,field_description:l10n_es_facturae.field_account_payment__facturae_withheld_amount
+msgid "Withheld Amount"
+msgstr "Retención de garantía (importe)"
+
+#. module: l10n_es_facturae
+#: model:ir.model.fields,field_description:l10n_es_facturae.field_account_bank_statement_line__facturae_withheld_percent
+#: model:ir.model.fields,field_description:l10n_es_facturae.field_account_move__facturae_withheld_percent
+#: model:ir.model.fields,field_description:l10n_es_facturae.field_account_payment__facturae_withheld_percent
+msgid "Withheld Percent"
+msgstr "Retención de garantía (porcentaje)"
+
+#. module: l10n_es_facturae
+#: model:ir.model.fields,field_description:l10n_es_facturae.field_account_bank_statement_line__facturae_withheld_reason
+#: model:ir.model.fields,field_description:l10n_es_facturae.field_account_move__facturae_withheld_reason
+#: model:ir.model.fields,field_description:l10n_es_facturae.field_account_payment__facturae_withheld_reason
+msgid "Withheld Reason"
+msgstr "Retención de garantía (razón)"
+
+#. module: l10n_es_facturae
 #. odoo-python
 #: code:addons/l10n_es_facturae/models/account_move.py:0
 #, python-format

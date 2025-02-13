@@ -54,6 +54,13 @@
                             <field name="facturae_file_reference" />
                             <field name="facturae_receiver_transaction_reference" />
                             <field name="facturae_receiver_contract_reference" />
+                            <field name="facturae_withheld_reason" />
+                            <field
+                                name="facturae_withheld_percent"
+                                widget="percentage"
+                                class="oe_inline"
+                            />
+                            <field name="facturae_withheld_amount" widget="monetary" />
                         </group>
                         <group name="facturae_attachment" string="Facturae Attachment">
                             <field name="l10n_es_facturae_attachment_ids">
