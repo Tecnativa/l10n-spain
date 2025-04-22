@@ -1,9 +1,14 @@
 # Copyright 2023 Binhex - Nicolás Ramos
 # Copyright 2024 Binhex - Christian Ramos
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl
-
+import base64
+import os
+import subprocess
+import tempfile
 
 from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+from odoo.tools import ustr
 
 
 class L10nEsAtcMod420Report(models.Model):
@@ -217,3 +222,91 @@ class L10nEsAtcMod420Report(models.Model):
             "target": "self",
             "tag": "reload",
         }
+
+    def action_generar_borrador_pdf(self):
+        self.ensure_one()
+        # if not self.xml_data:
+        #     raise UserError("No hay XML para generar el PDF.")
+
+        # Configuración de rutas
+        SRC_FILES = "/opt/odoo/auto/addons/l10n_es_atc_mod420/static/src/files"
+        JAR_PATH = (
+            "/opt/odoo/auto/addons/l10n_es_atc_mod420/static/"
+            "src/files/pa-mod420-9.2.0.jar"
+        )
+        MAIN_CLASS = "org.grecasa.ext.pa.mod420.MIModelo420"
+        TMP_DIR = tempfile.mkdtemp()
+        xml_path = os.path.join(SRC_FILES, "M420-Ingreso.xml")
+        errores_path = os.path.join(TMP_DIR, "FICH_ERRORES.txt")
+        control_path = os.path.join(TMP_DIR, "FICH_CONTROL.txt")
+        resultado_path = os.path.join(TMP_DIR, "Resultado")
+        servicio_path = os.path.join(TMP_DIR, "Servicio420")
+        os.makedirs(resultado_path, exist_ok=True)
+        os.makedirs(servicio_path, exist_ok=True)
+
+        # with open(xml_path, 'w', encoding='iso-8859-1') as f:
+        #     f.write(self.xml_data)
+
+        cmd = [
+            "java",
+            "-cp",
+            JAR_PATH,
+            MAIN_CLASS,
+            f'/E:"{xml_path}"',
+            f'/R:"{errores_path}"',
+            f'/F:"{control_path}"',
+            '/S:"B"',
+            f'/T:"{resultado_path}"',
+            '/P:"borrador"',
+            '/N:"N"',
+            f'/W:"{servicio_path}"',
+        ]
+
+        try:
+            result = subprocess.run(
+                " ".join(cmd), shell=True, capture_output=True, text=True
+            )
+            if result.returncode != 0:
+                raise UserError(
+                    f"❌ Error al generar el PDF del borrador:\n"
+                    f"🔁 Código de salida: {result.returncode}\n"
+                    f"📤 STDOUT:\n{result.stdout}\n"
+                    f"📥 STDERR:\n{result.stderr}"
+                )
+        except Exception as e:
+            raise UserError(
+                _(f"❌ Excepción durante la ejecución del comando:\n{ustr(e)}")
+            ) from e
+
+        # Verificar PDF
+        pdf_path = os.path.join(resultado_path, "borrador.pdf")
+        if not os.path.exists(pdf_path):
+            pdf_path = next(
+                (
+                    os.path.join(resultado_path, f)
+                    for f in os.listdir(resultado_path)
+                    if f.startswith("borrador420_")
+                ),
+                None,
+            )
+            if not pdf_path or not os.path.exists(pdf_path):
+                raise UserError(
+                    _(
+                        "PDF no generado. Revisa si el XML es válido y "
+                        "los parámetros correctos."
+                    )
+                )
+
+        with open(pdf_path, "rb") as f:
+            pdf_content = f.read()
+
+        self.env["ir.attachment"].create(
+            {
+                "name": "Borrador Modelo 420",
+                "type": "binary",
+                "datas": base64.b64encode(pdf_content).decode("ascii"),
+                "res_model": self._name,
+                "res_id": self.id,
+                "mimetype": "application/pdf",
+            }
+        )

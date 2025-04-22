@@ -33,6 +33,12 @@
                     type="object"
                     icon="fa-share"
                 />
+                <button
+                    name="action_generar_borrador_pdf"
+                    string="Generar borrador"
+                    type="object"
+                    icon="fa-share"
+                />
             </header>
             <field name="export_config_id" position="attributes">
                 <attribute name="invisible">1</attribute>
