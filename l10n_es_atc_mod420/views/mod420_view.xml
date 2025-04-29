@@ -34,14 +34,21 @@
                     icon="fa-share"
                 />
                 <button
-                    name="action_generar_borrador_pdf"
-                    string="Generar borrador"
+                    name="action_generar_mod420"
+                    string="Generar declaración"
                     type="object"
                     icon="fa-share"
                 />
             </header>
             <field name="export_config_id" position="attributes">
                 <attribute name="invisible">1</attribute>
+            </field>
+            <field name="statement_type" position="after">
+                <field
+                    name="output_type"
+                    readonly="state == 'cancelled'"
+                    required="1"
+                />
             </field>
             <group name="group_declaration" position="after">
                 <group
