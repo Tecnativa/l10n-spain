@@ -10,7 +10,7 @@
         >
             <!-- TODO: IDE attributes? -->
             <IDE>
-                <!-- TODO: SVP, NVP, CMU, TIP, NPK, CAL, BLO, ESC, PIS, PUE, POR -->
+                <!-- TODO: SVP, CMU, TIP, NPK, CAL, BLO, ESC, PIS, PUE, POR -->
                 <OTP
                     t-att-NIF="doc.company_vat"
                     t-att-NRS="doc.company_id.name"
@@ -18,9 +18,9 @@
                     t-att-EMA="doc.company_id.email"
                     t-att-PAI="doc.company_id.country_id.code"
                     POP="35"
-                    CP="35003"
+                    t-att-CP="doc.company_id.zip"
                     SVP="CL"
-                    NVP="USOS MULTIPLES"
+                    t-att-NVP="(doc.company_id.street or '').upper()"
                     CMU="35016"
                 />
             </IDE>
@@ -100,7 +100,7 @@
             <RES
                 t-att-TIP="'S' if doc.result_type == 'N' else doc.result_type"
                 t-att-IMP="doc._format_amount(abs(doc.resultado_autoliquidacion))"
-                t-att-FPA="5 if doc.output_type == 'T' else 1"
+                t-att-FPA="doc.payment_type"
             />
             <!-- TODO: support for SAF? -->
         </DEC>

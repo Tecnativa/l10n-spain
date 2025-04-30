@@ -49,6 +49,7 @@
                     readonly="state == 'cancelled'"
                     required="1"
                 />
+                <field name="payment_type" readonly="state == 'cancelled'" />
             </field>
             <group name="group_declaration" position="after">
                 <group
