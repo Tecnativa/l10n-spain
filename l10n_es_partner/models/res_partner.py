@@ -81,3 +81,14 @@ class ResPartner(models.Model):
         return super().name_search(
             name=name, domain=domain, operator=operator, limit=limit
         )
+
+    @api.model
+    def get_views(self, views, options=None):
+        res = super().get_views(views, options)
+        # Inject the commercial field into the domain when searching by complete_name
+        if "search" in res["views"]:
+            res["views"]["search"]["arch"] = res["views"]["search"]["arch"].replace(
+                "'|', ('complete_name', 'ilike', self)",
+                "'|','|',('complete_name','ilike',self),('comercial','ilike',self)",
+            )
+        return res
