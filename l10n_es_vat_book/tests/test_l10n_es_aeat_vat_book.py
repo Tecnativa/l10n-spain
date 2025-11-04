@@ -86,7 +86,7 @@ class TestL10nEsAeatVatBook(TestL10nEsAeatVatBookBase):
         # P_IVA0_ND - 21% IVA Soportado no deducible
         line = vat_book.received_tax_summary_ids[2]
         self.assertAlmostEqual(line.base_amount, 100)
-        # self.assertAlmostEqual(line.tax_amount, 21)
+        self.assertAlmostEqual(line.tax_amount, 21)
         # Print to PDF
         report_pdf = self.env["ir.actions.report"]._render(
             "l10n_es_vat_book.act_report_vat_book_invoices_issued_pdf", vat_book.ids
