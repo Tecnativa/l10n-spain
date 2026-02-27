@@ -942,8 +942,7 @@ class AccountMove(models.Model):
         batch = self._get_sii_batch()
         documents = all_documents[:batch]
         remaining_documents = all_documents - documents
-        for doc in documents:
-            doc.confirm_one_document()
+        documents.confirm_one_document()
         return remaining_documents
 
     @api.model

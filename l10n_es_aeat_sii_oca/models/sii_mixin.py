@@ -8,8 +8,7 @@ import json
 import logging
 
 from odoo import _, api, exceptions, fields, models
-from odoo.exceptions import UserError, ValidationError
-from odoo.modules.registry import Registry
+from odoo.exceptions import UserError
 from odoo.tools.float_utils import float_compare
 
 from odoo.addons.l10n_es_aeat.models.aeat_mixin import round_by_keys
@@ -773,6 +772,87 @@ class SiiMixin(models.AbstractModel):
         )
         return inv_dict
 
+    def _update_from_aeat_response(self, res_lines, invoices, docs_vals, mapping_key):
+        for result in res_lines:
+            doc_vals = docs_vals.get(result["NumSerieFacturaEmisor"], {})
+            serial = result["NumSerieFacturaEmisor"]
+            document = invoices.filtered(
+                lambda d, s=serial: d._get_document_serial_number() == s
+            )
+            if result["EstadoEnvio"] == "Correcto":
+                doc_vals.update(
+                    {
+                        "aeat_state": "sent",
+                        "sii_csv": result["CSV"],
+                        "aeat_send_failed": False,
+                    }
+                )
+            elif (
+                result["EstadoEnvio"] == "ParcialmenteCorrecto"
+                and result["EstadoRegistro"] == "AceptadoConErrores"
+            ):
+                doc_vals.update(
+                    {
+                        "aeat_state": "sent_w_errors",
+                        "sii_csv": result["CSV"],
+                        "aeat_send_failed": True,
+                    }
+                )
+            else:
+                doc_vals["aeat_send_failed"] = True
+            if (
+                "aeat_state" in doc_vals
+                and not document.sii_account_registration_date
+                and mapping_key[:2] == "in"
+            ):
+                doc_vals[
+                    "sii_account_registration_date"
+                ] = document._get_account_registration_date()
+            doc_vals["sii_return"] = res_lines
+            doc_vals["sii_send_date"] = False
+            send_error = False
+            if result["CodigoErrorRegistro"]:
+                send_error = "{} | {}".format(
+                    str(result["CodigoErrorRegistro"]),
+                    str(result["DescripcionErrorRegistro"])[:60],
+                )
+            doc_vals["aeat_send_error"] = send_error
+            document.write(doc_vals)
+
+    def _create_aeat_connection_and_send(
+        self, first_invoice, mapping_key, header, invoices_dict
+    ):
+        try:
+            serv = first_invoice._connect_aeat(mapping_key)
+            if mapping_key in ["out_invoice", "out_refund"]:
+                res = serv.SuministroLRFacturasEmitidas(header, invoices_dict)
+            elif mapping_key in ["in_invoice", "in_refund"]:
+                res = serv.SuministroLRFacturasRecibidas(header, invoices_dict)
+            return res
+        except Exception as fault:
+            return {
+                "aeat_send_failed": True,
+                "aeat_send_error": repr(fault)[:60],
+                "sii_return": repr(fault),
+                "sii_send_date": False,
+            }
+
+    def _write_exception_sii(self, docs_vals, document, res):
+        # In case of exception during the connecting to SII
+        doc_vals = docs_vals.get(document._get_document_serial_number(), {})
+        inv_dict = doc_vals.get("aeat_content_sent", {})
+        if inv_dict:
+            doc_vals.update(
+                {
+                    "aeat_send_failed": True,
+                    "aeat_send_error": res.get("aeat_send_error"),
+                    "sii_return": res.get("sii_return"),
+                    "aeat_content_sent": json.dumps(inv_dict, indent=4),
+                    "sii_send_date": False,
+                }
+            )
+            document.write(doc_vals)
+
     def _get_account_registration_date(self):
         """Hook method to allow the setting of the account registration date
         of each supplier invoice. The SII recommends to set the send date as
@@ -785,92 +865,66 @@ class SiiMixin(models.AbstractModel):
         return self.sii_account_registration_date or fields.Date.today()
 
     def _send_document_to_sii(self):
-        for document in self.filtered(
+        invoices_dict = {
+            "in": {
+                "types": ["in_invoice", "in_refund"],
+                "data": {"not_sent": [], "sent": []},
+            },
+            "out": {
+                "types": ["out_invoice", "out_refund"],
+                "data": {"not_sent": [], "sent": []},
+            },
+        }
+        docs_vals = {}
+        validation_errors = []
+        documents = self.filtered(
             lambda i: i.state in self._get_valid_document_states()
-        ):
-            if document.aeat_state == "not_sent":
-                tipo_comunicacion = "A0"
-            else:
-                tipo_comunicacion = "A1"
-            header = document._get_aeat_header(tipo_comunicacion)
-            doc_vals = {
-                "aeat_header_sent": json.dumps(header, indent=4),
-            }
-            # add this extra try except in case _get_aeat_invoice_dict fails
-            # if not, get the value doc_dict for the next try and except below
+        )
+        for document in documents:
             try:
                 inv_dict = document._get_aeat_invoice_dict()
             except Exception as fault:
-                raise ValidationError(fault) from fault
-            try:
-                mapping_key = document._get_mapping_key()
-                serv = document._connect_aeat(mapping_key)
-                doc_vals["aeat_content_sent"] = json.dumps(inv_dict, indent=4)
-                if mapping_key in ["out_invoice", "out_refund"]:
-                    res = serv.SuministroLRFacturasEmitidas(header, inv_dict)
-                elif mapping_key in ["in_invoice", "in_refund"]:
-                    res = serv.SuministroLRFacturasRecibidas(header, inv_dict)
-                # TODO Facturas intracomunitarias 66 RIVA
-                # elif invoice.fiscal_position_id.id == self.env.ref(
-                #     'account.fp_intra').id:
-                #     res = serv.SuministroLRDetOperacionIntracomunitaria(
-                #         header, invoices)
-                res_line = res["RespuestaLinea"][0]
-                if res["EstadoEnvio"] == "Correcto":
-                    doc_vals.update(
-                        {
-                            "aeat_state": "sent",
-                            "sii_csv": res["CSV"],
-                            "aeat_send_failed": False,
-                        }
-                    )
-                elif (
-                    res["EstadoEnvio"] == "ParcialmenteCorrecto"
-                    and res_line["EstadoRegistro"] == "AceptadoConErrores"
-                ):
-                    doc_vals.update(
-                        {
-                            "aeat_state": "sent_w_errors",
-                            "sii_csv": res["CSV"],
-                            "aeat_send_failed": True,
-                        }
-                    )
-                else:
-                    doc_vals["aeat_send_failed"] = True
-                if (
-                    "aeat_state" in doc_vals
-                    and not document.sii_account_registration_date
-                    and mapping_key[:2] == "in"
-                ):
-                    doc_vals[
-                        "sii_account_registration_date"
-                    ] = document._get_account_registration_date()
-                doc_vals["sii_return"] = res
-                doc_vals["sii_send_date"] = False
-                send_error = False
-                if res_line["CodigoErrorRegistro"]:
-                    send_error = "{} | {}".format(
-                        str(res_line["CodigoErrorRegistro"]),
-                        str(res_line["DescripcionErrorRegistro"])[:60],
-                    )
-                doc_vals["aeat_send_error"] = send_error
-                document.write(doc_vals)
-            except Exception as fault:
-                new_cr = Registry(self.env.cr.dbname).cursor()
-                env = api.Environment(new_cr, self.env.uid, self.env.context)
-                document = env[document._name].browse(document.id)
-                doc_vals.update(
-                    {
-                        "aeat_send_failed": True,
-                        "aeat_send_error": repr(fault)[:60],
-                        "sii_return": repr(fault),
-                        "aeat_content_sent": json.dumps(inv_dict, indent=4),
-                        "sii_send_date": False,
-                    }
+                validation_errors.append(fault)
+                continue
+            docs_vals[document._get_document_serial_number()] = {
+                "aeat_content_sent": json.dumps(inv_dict, indent=4)
+            }
+            for values in invoices_dict.values():
+                if document.move_type in values["types"]:
+                    state = "not_sent" if document.aeat_state == "not_sent" else "sent"
+                    values["data"][state].append(inv_dict)
+        for values in invoices_dict.values():
+            invoice_type_docs = documents.filtered_domain(
+                [("move_type", "in", values["types"])]
+            )
+            first_invoice = invoice_type_docs[:1]
+            if not first_invoice:
+                continue
+            for state, header_code in [("not_sent", "A0"), ("sent", "A1")]:
+                payload = values["data"][state]
+                if not payload:
+                    continue
+                res = self._create_aeat_connection_and_send(
+                    first_invoice,
+                    first_invoice._get_mapping_key(),
+                    first_invoice._get_aeat_header(header_code),
+                    payload,
                 )
-                document.write(doc_vals)
-                new_cr.commit()
-                new_cr.close()
+                if res.get("aeat_send_failed"):
+                    for document in invoice_type_docs:
+                        self._write_exception_sii(docs_vals, document, res)
+                else:
+                    self._update_from_aeat_response(
+                        res["RespuestaLinea"],
+                        documents,
+                        docs_vals,
+                        first_invoice._get_mapping_key(),
+                    )
+        if validation_errors:
+            _logger.error(
+                "Errors found during the validation of documents to send to SII: %s",
+                validation_errors,
+            )
 
     def confirm_one_document(self):
         self.sudo()._send_document_to_sii()
