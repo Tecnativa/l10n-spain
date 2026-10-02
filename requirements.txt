@@ -3,6 +3,7 @@ chardet
 deepdiff<8
 pycountry
 pycryptodome
+pypdf
 requests
 suds-py3
 unidecode

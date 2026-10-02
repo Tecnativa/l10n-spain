@@ -108,9 +108,9 @@ class StockPicking(models.Model):
                         new_val = vals[field_name]
                         if old_val and old_val != new_val:
                             current_history = rec[history_field] or ""
-                            history_updates.setdefault(rec.id, {})[history_field] = (
-                                f"{current_history}{old_val}\n"
-                            )
+                            history_updates.setdefault(rec.id, {})[
+                                history_field
+                            ] = f"{current_history}{old_val}\n"
 
         res = super().write(vals)
 
@@ -122,7 +122,7 @@ class StockPicking(models.Model):
 
     def _get_share_url(self):
         self.ensure_one()
-        self.check_access("read")
+        self.check_access_rights("read")
         if not self.deca_access_token:
             self.sudo().deca_access_token = self.env[
                 "ir.attachment"

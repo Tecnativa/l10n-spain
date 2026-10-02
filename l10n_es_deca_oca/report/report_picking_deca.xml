@@ -18,9 +18,9 @@
                         <div class="mb-4">
                             <strong>Place and date of issue:</strong>
                             <span t-out="o.company_id.city" />, <span
-                            t-out="o.create_date"
-                            t-options='{"widget": "datetime", "format": "dd/MM/yyyy"}'
-                        />
+                                t-out="o.create_date"
+                                t-options='{"widget": "datetime", "format": "dd/MM/yyyy"}'
+                            />
                         </div>
 
                         <div class="row mt-4">
@@ -29,31 +29,31 @@
                                 <strong>Sender / Place of loading:</strong>
                                 <div t-if="o.picking_type_id.warehouse_id.partner_id">
                                     <span
-                                    t-field="o.picking_type_id.warehouse_id.partner_id.name"
-                                /><br />
+                                        t-field="o.picking_type_id.warehouse_id.partner_id.name"
+                                    /><br />
                                     <span>NIF: </span><span
-                                    t-field="o.picking_type_id.warehouse_id.partner_id.vat"
-                                /><br />
+                                        t-field="o.picking_type_id.warehouse_id.partner_id.vat"
+                                    /><br />
                                     <span
-                                    t-field="o.picking_type_id.warehouse_id.partner_id.street"
-                                /><br />
+                                        t-field="o.picking_type_id.warehouse_id.partner_id.street"
+                                    /><br />
                                     <span
-                                    t-field="o.picking_type_id.warehouse_id.partner_id.zip"
-                                /> <span
-                                    t-field="o.picking_type_id.warehouse_id.partner_id.city"
-                                />, <span
-                                    t-field="o.picking_type_id.warehouse_id.partner_id.state_id.name"
-                                />
+                                        t-field="o.picking_type_id.warehouse_id.partner_id.zip"
+                                    /> <span
+                                        t-field="o.picking_type_id.warehouse_id.partner_id.city"
+                                    />, <span
+                                        t-field="o.picking_type_id.warehouse_id.partner_id.state_id.name"
+                                    />
                                 </div>
                                 <div t-else="">
                                     <span t-field="o.company_id.name" /><br />
                                     <span>NIF: </span><span
-                                    t-field="o.company_id.vat"
-                                /><br />
+                                        t-field="o.company_id.vat"
+                                    /><br />
                                     <span t-field="o.company_id.street" /><br />
                                     <span t-field="o.company_id.zip" /> <span
-                                    t-field="o.company_id.city"
-                                />, <span t-field="o.company_id.state_id.name" />
+                                        t-field="o.company_id.city"
+                                    />, <span t-field="o.company_id.state_id.name" />
                                 </div>
                             </div>
 
@@ -63,12 +63,12 @@
                                 <div>
                                     <span t-field="o.partner_id.name" /><br />
                                     <span>NIF: </span><span
-                                    t-field="o.partner_id.vat"
-                                /><br />
+                                        t-field="o.partner_id.vat"
+                                    /><br />
                                     <span t-field="o.partner_id.street" /><br />
                                     <span t-field="o.partner_id.zip" /> <span
-                                    t-field="o.partner_id.city"
-                                />, <span t-field="o.partner_id.state_id.name" />
+                                        t-field="o.partner_id.city"
+                                    />, <span t-field="o.partner_id.state_id.name" />
                                 </div>
                             </div>
                         </div>
@@ -84,14 +84,14 @@
                                 <div t-if="carrier_contact">
                                     <span t-out="carrier_contact.name" /><br />
                                     <span>NIF: </span><span
-                                    t-out="carrier_contact.vat"
-                                /><br />
+                                        t-out="carrier_contact.vat"
+                                    /><br />
                                     <span t-out="carrier_contact.street" /><br />
                                     <span t-out="carrier_contact.zip" /> <span
-                                    t-out="carrier_contact.city"
-                                />, <span
-                                    t-out="carrier_contact.state_id.name"
-                                />, <span t-out="carrier_contact.country_id.name" />
+                                        t-out="carrier_contact.city"
+                                    />, <span
+                                        t-out="carrier_contact.state_id.name"
+                                    />, <span t-out="carrier_contact.country_id.name" />
                                 </div>
                             </div>
 
@@ -197,8 +197,8 @@
                                             <span t-field="move.product_uom.name" />
                                         </td>
                                         <td class="text-end"><span
-                                            t-field="move.weight"
-                                        /> kg</td>
+                                                t-field="move.weight"
+                                            /> kg</td>
                                     </tr>
                                 </t>
                             </tbody>

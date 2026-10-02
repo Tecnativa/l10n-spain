@@ -16,27 +16,13 @@ class TestStockPickingDeca(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
-
         # Create partner
-        cls.partner = cls.env["res.partner"].create(
-            {
-                "name": "Test Partner",
-            }
-        )
-
+        cls.partner = cls.env["res.partner"].create({"name": "Test Partner"})
         # Create carrier contact
-        cls.carrier_contact = cls.env["res.partner"].create(
-            {
-                "name": "Carrier Contact",
-            }
-        )
-
+        cls.carrier_contact = cls.env["res.partner"].create({"name": "Carrier Contact"})
         # Create carrier (mock basic delivery carrier)
         cls.carrier_product = cls.env["product.product"].create(
-            {
-                "name": "Carrier Product",
-                "type": "service",
-            }
+            {"name": "Carrier Product", "type": "service"}
         )
         cls.carrier = cls.env["delivery.carrier"].create(
             {
@@ -45,19 +31,13 @@ class TestStockPickingDeca(TransactionCase):
                 "carrier_contact_id": cls.carrier_contact.id,
             }
         )
-
         # Create product and stock location for picking
         cls.product = cls.env["product.product"].create(
-            {
-                "name": "Test Product",
-                "type": "consu",
-            }
+            {"name": "Test Product", "type": "product"}
         )
-
         cls.location_customer = cls.env.ref("stock.stock_location_customers")
         cls.location_stock = cls.env.ref("stock.stock_location_stock")
         cls.picking_type_out = cls.env.ref("stock.picking_type_out")
-
         # Create a picking
         cls.picking = cls.env["stock.picking"].create(
             {
@@ -76,6 +56,7 @@ class TestStockPickingDeca(TransactionCase):
         cls.move = cls.env["stock.move"].create(
             {
                 "product_id": cls.product.id,
+                "name": cls.product.display_name,
                 "product_uom_qty": 10.0,
                 "product_uom": cls.product.uom_id.id,
                 "picking_id": cls.picking.id,
