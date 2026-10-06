@@ -39,7 +39,7 @@ class TestStockPickingDeca(TransactionCase):
         cls.product = cls.env["product.product"].create(
             {
                 "name": "Test Product",
-                "type": "consu",
+                "type": "product",
                 "weight": 2.5,
             }
         )
@@ -67,6 +67,7 @@ class TestStockPickingDeca(TransactionCase):
         cls.move = cls.env["stock.move"].create(
             {
                 "product_id": cls.product.id,
+                "name": cls.product.display_name,
                 "product_uom_qty": 10.0,
                 "product_uom": cls.product.uom_id.id,
                 "picking_id": cls.picking.id,
@@ -267,6 +268,7 @@ class TestStockPickingDeca(TransactionCase):
         self.env["stock.move"].create(
             {
                 "product_id": self.product.id,
+                "name": self.product.display_name,
                 "product_uom_qty": 5.0,
                 "product_uom": self.product.uom_id.id,
                 "picking_id": picking_in.id,
@@ -293,6 +295,7 @@ class TestStockPickingDeca(TransactionCase):
         self.env["stock.move"].create(
             {
                 "product_id": self.product.id,
+                "name": self.product.display_name,
                 "product_uom_qty": 2.0,
                 "product_uom": self.product.uom_id.id,
                 "picking_id": picking_int.id,

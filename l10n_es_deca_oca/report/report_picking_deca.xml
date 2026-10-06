@@ -18,9 +18,9 @@
                         <div class="mb-4">
                             <strong class="fw-bold">Place and date of issue:</strong>
                             <span t-out="o.company_id.city" />, <span
-                            t-out="o.create_date"
-                            t-options='{"widget": "datetime", "format": "dd/MM/yyyy"}'
-                        />
+                                t-out="o.create_date"
+                                t-options='{"widget": "datetime", "format": "dd/MM/yyyy"}'
+                            />
                         </div>
 
                         <div class="row mt-4">
@@ -45,12 +45,12 @@
                                 <div t-if="deca_sender">
                                     <span t-field="deca_sender.name" /><br />
                                     <span>NIF: </span><span
-                                    t-field="deca_sender.vat"
-                                /><br />
+                                        t-field="deca_sender.vat"
+                                    /><br />
                                     <span t-field="deca_sender.street" /><br />
                                     <span t-field="deca_sender.zip" /> <span
-                                    t-field="deca_sender.city"
-                                />, <span t-field="deca_sender.state_id.name" />
+                                        t-field="deca_sender.city"
+                                    />, <span t-field="deca_sender.state_id.name" />
                                 </div>
                             </div>
 
@@ -62,12 +62,12 @@
                                 <div t-if="deca_consignee">
                                     <span t-field="deca_consignee.name" /><br />
                                     <span>NIF: </span><span
-                                    t-field="deca_consignee.vat"
-                                /><br />
+                                        t-field="deca_consignee.vat"
+                                    /><br />
                                     <span t-field="deca_consignee.street" /><br />
                                     <span t-field="deca_consignee.zip" /> <span
-                                    t-field="deca_consignee.city"
-                                />, <span t-field="deca_consignee.state_id.name" />
+                                        t-field="deca_consignee.city"
+                                    />, <span t-field="deca_consignee.state_id.name" />
                                 </div>
                             </div>
                         </div>
@@ -83,14 +83,14 @@
                                 <div t-if="carrier_contact">
                                     <span t-out="carrier_contact.name" /><br />
                                     <span>NIF: </span><span
-                                    t-out="carrier_contact.vat"
-                                /><br />
+                                        t-out="carrier_contact.vat"
+                                    /><br />
                                     <span t-out="carrier_contact.street" /><br />
                                     <span t-out="carrier_contact.zip" /> <span
-                                    t-out="carrier_contact.city"
-                                />, <span
-                                    t-out="carrier_contact.state_id.name"
-                                />, <span t-out="carrier_contact.country_id.name" />
+                                        t-out="carrier_contact.city"
+                                    />, <span
+                                        t-out="carrier_contact.state_id.name"
+                                    />, <span t-out="carrier_contact.country_id.name" />
                                 </div>
                             </div>
 
@@ -196,8 +196,8 @@
                                             <span t-field="move.product_uom.name" />
                                         </td>
                                         <td class="text-end"><span
-                                            t-field="move.weight"
-                                        /> kg</td>
+                                                t-field="move.weight"
+                                            /> kg</td>
                                     </tr>
                                 </t>
                             </tbody>

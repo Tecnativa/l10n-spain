@@ -4,7 +4,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 17.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-10-05 18:17+0000\n"
 "PO-Revision-Date: 2026-10-05 18:17+0000\n"
@@ -53,8 +53,14 @@ msgid "<strong class=\"fw-bold\">Sender / Place of loading:</strong>"
 msgstr ""
 
 #. module: l10n_es_deca_oca
+#: model:ir.model.fields,help:l10n_es_deca_oca.field_stock_picking_type__l10n_es_deca_enabled
+msgid "Allows printing the DeCA report for incoming shipments."
+msgstr ""
+
+#. module: l10n_es_deca_oca
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
+#, python-format
 msgid "Carrier NIF (VAT)"
 msgstr ""
 
@@ -62,6 +68,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
 #: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__carrier_contact_id
+#, python-format
 msgid "Carrier contact"
 msgstr ""
 
@@ -73,6 +80,7 @@ msgstr ""
 #. module: l10n_es_deca_oca
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
+#, python-format
 msgid "Consignee NIF (VAT)"
 msgstr ""
 
@@ -98,29 +106,31 @@ msgid "DeCA Version"
 msgstr ""
 
 #. module: l10n_es_deca_oca
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_ir_actions_report__display_name
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_move__display_name
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__display_name
-msgid "Display Name"
-msgstr ""
-
-#. module: l10n_es_deca_oca
 #: model_terms:ir.ui.view,arch_db:l10n_es_deca_oca.report_deca_document
 msgid "Document for electronic Control of Administration (DeCA)"
 msgstr ""
 
 #. module: l10n_es_deca_oca
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_ir_actions_report__id
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_move__id
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__id
-msgid "ID"
+#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking_type__l10n_es_deca_enabled
+msgid "Enable DeCA"
+msgstr ""
+
+#. module: l10n_es_deca_oca
+#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__l10n_es_show_deca
+msgid "L10N Es Show Deca"
 msgstr ""
 
 #. module: l10n_es_deca_oca
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
 #: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__tractor_license_plate
+#, python-format
 msgid "Main vehicle or tractor licence plate"
+msgstr ""
+
+#. module: l10n_es_deca_oca
+#: model:ir.model,name:l10n_es_deca_oca.model_stock_picking_type
+msgid "Picking Type"
 msgstr ""
 
 #. module: l10n_es_deca_oca
@@ -151,6 +161,7 @@ msgstr ""
 #. module: l10n_es_deca_oca
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
+#, python-format
 msgid "Sender NIF (VAT)"
 msgstr ""
 
@@ -182,6 +193,7 @@ msgstr ""
 #. module: l10n_es_deca_oca
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
+#, python-format
 msgid ""
 "The following data is missing for the DeCA report for picking %(picking)s:\n"
 "%(missing)s"
@@ -241,6 +253,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_move__weight
 #: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__weight
 #: model_terms:ir.ui.view,arch_db:l10n_es_deca_oca.report_deca_document
+#, python-format
 msgid "Weight"
 msgstr ""
 

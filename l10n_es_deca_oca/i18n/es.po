@@ -52,11 +52,18 @@ msgstr "<strong class=\"fw-bold\">Lugar y fecha de emisión:</strong>"
 #. module: l10n_es_deca_oca
 #: model_terms:ir.ui.view,arch_db:l10n_es_deca_oca.report_deca_document
 msgid "<strong class=\"fw-bold\">Sender / Place of loading:</strong>"
-msgstr "<strong class=\"fw-bold\">Cargador (Expedidor) / Lugar de carga:</strong>"
+msgstr ""
+"<strong class=\"fw-bold\">Cargador (Expedidor) / Lugar de carga:</strong>"
+
+#. module: l10n_es_deca_oca
+#: model:ir.model.fields,help:l10n_es_deca_oca.field_stock_picking_type__l10n_es_deca_enabled
+msgid "Allows printing the DeCA report for incoming shipments."
+msgstr ""
 
 #. module: l10n_es_deca_oca
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
+#, python-format
 msgid "Carrier NIF (VAT)"
 msgstr "NIF del transportista"
 
@@ -64,6 +71,7 @@ msgstr "NIF del transportista"
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
 #: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__carrier_contact_id
+#, python-format
 msgid "Carrier contact"
 msgstr "Contacto del transportista"
 
@@ -75,6 +83,7 @@ msgstr "Contacto del transportista cuyos detalles se imprimen en el DeCA"
 #. module: l10n_es_deca_oca
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
+#, python-format
 msgid "Consignee NIF (VAT)"
 msgstr "NIF del destinatario"
 
@@ -100,30 +109,32 @@ msgid "DeCA Version"
 msgstr "Versión DeCA"
 
 #. module: l10n_es_deca_oca
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_ir_actions_report__display_name
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_move__display_name
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__display_name
-msgid "Display Name"
-msgstr "Nombre para mostrar"
-
-#. module: l10n_es_deca_oca
 #: model_terms:ir.ui.view,arch_db:l10n_es_deca_oca.report_deca_document
 msgid "Document for electronic Control of Administration (DeCA)"
 msgstr "Documento de control administrativo electrónico (DeCA)"
 
 #. module: l10n_es_deca_oca
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_ir_actions_report__id
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_move__id
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__id
-msgid "ID"
-msgstr "ID"
+#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking_type__l10n_es_deca_enabled
+msgid "Enable DeCA"
+msgstr ""
+
+#. module: l10n_es_deca_oca
+#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__l10n_es_show_deca
+msgid "L10N Es Show Deca"
+msgstr ""
 
 #. module: l10n_es_deca_oca
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
 #: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__tractor_license_plate
+#, python-format
 msgid "Main vehicle or tractor licence plate"
 msgstr "Matrícula del vehículo principal o tractora"
+
+#. module: l10n_es_deca_oca
+#: model:ir.model,name:l10n_es_deca_oca.model_stock_picking_type
+msgid "Picking Type"
+msgstr ""
 
 #. module: l10n_es_deca_oca
 #: model_terms:ir.ui.view,arch_db:l10n_es_deca_oca.view_picking_form_inherit_l10n_es_deca_oca
@@ -153,6 +164,7 @@ msgstr "Token de acceso de seguridad para compartir url"
 #. module: l10n_es_deca_oca
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
+#, python-format
 msgid "Sender NIF (VAT)"
 msgstr "NIF del remitente"
 
@@ -184,22 +196,23 @@ msgstr "Obtener url para compartir del albarán"
 #. module: l10n_es_deca_oca
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
+#, python-format
 msgid ""
 "The following data is missing for the DeCA report for picking %(picking)s:\n"
 "%(missing)s"
 msgstr ""
-"Faltan los siguientes datos obligatorios para el informe DeCA del albarán %(picking)s:\n"
+"Faltan los siguientes datos obligatorios para el informe DeCA del albarán "
+"%(picking)s:\n"
 "%(missing)s"
 
 #. module: l10n_es_deca_oca
 #: model_terms:ir.ui.view,arch_db:l10n_es_deca_oca.report_deca_document
 msgid ""
-"This carriage is governed by Law 15/2009 of 11 November, on the contract for"
-" the land carriage of goods, and by any other applicable Spanish "
-"legislation."
+"This carriage is governed by Law 15/2009 of 11 November, on the contract for "
+"the land carriage of goods, and by any other applicable Spanish legislation."
 msgstr ""
-"Este transporte se rige por la Ley 15/2009, de 11 de noviembre, del contrato"
-" de transporte terrestre de mercancías, y por el resto de legislación "
+"Este transporte se rige por la Ley 15/2009, de 11 de noviembre, del contrato "
+"de transporte terrestre de mercancías, y por el resto de legislación "
 "española aplicable."
 
 #. module: l10n_es_deca_oca
@@ -248,6 +261,7 @@ msgstr "Unidad"
 #: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_move__weight
 #: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__weight
 #: model_terms:ir.ui.view,arch_db:l10n_es_deca_oca.report_deca_document
+#, python-format
 msgid "Weight"
 msgstr "Peso"
 

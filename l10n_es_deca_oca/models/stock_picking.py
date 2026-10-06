@@ -5,7 +5,7 @@ import hashlib
 
 from lxml import etree
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -103,29 +103,29 @@ class StockPicking(models.Model):
         for picking in self:
             missing = []
             if not picking.tractor_license_plate:
-                missing.append(self.env._("Main vehicle or tractor licence plate"))
+                missing.append(_("Main vehicle or tractor licence plate"))
             if not picking.carrier_contact_id:
-                missing.append(self.env._("Carrier contact"))
+                missing.append(_("Carrier contact"))
             else:
                 if not picking.carrier_contact_id.vat:
-                    missing.append(self.env._("Carrier NIF (VAT)"))
+                    missing.append(_("Carrier NIF (VAT)"))
 
             if not picking.partner_id.vat:
-                missing.append(self.env._("Consignee NIF (VAT)"))
+                missing.append(_("Consignee NIF (VAT)"))
 
             sender = (
                 picking.picking_type_id.warehouse_id.partner_id
                 or picking.company_id.partner_id
             )
             if not sender.vat:
-                missing.append(self.env._("Sender NIF (VAT)"))
+                missing.append(_("Sender NIF (VAT)"))
 
             if not picking.weight:
-                missing.append(self.env._("Weight"))
+                missing.append(_("Weight"))
 
             if missing:
                 raise UserError(
-                    self.env._(
+                    _(
                         "The following data is missing for the DeCA report for "
                         "picking %(picking)s:\n%(missing)s",
                         picking=picking.name,
@@ -171,9 +171,9 @@ class StockPicking(models.Model):
                         new_val = vals[field_name]
                         if old_val and old_val != new_val:
                             current_history = rec[history_field] or ""
-                            history_updates.setdefault(rec.id, {})[history_field] = (
-                                f"{current_history}{old_val}\n"
-                            )
+                            history_updates.setdefault(rec.id, {})[
+                                history_field
+                            ] = f"{current_history}{old_val}\n"
 
         res = super().write(vals)
 
@@ -185,7 +185,7 @@ class StockPicking(models.Model):
 
     def _get_share_url(self):
         self.ensure_one()
-        self.check_access("read")
+        self.check_access_rights("read")
         if not self.deca_access_token:
             self.sudo().deca_access_token = self.env[
                 "ir.attachment"
