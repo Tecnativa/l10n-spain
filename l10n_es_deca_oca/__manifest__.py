@@ -24,4 +24,5 @@
         "views/stock_picking_type_views.xml",
         "views/stock_picking_views.xml",
     ],
+    "pre_init_hook": "pre_init_hook",
 }

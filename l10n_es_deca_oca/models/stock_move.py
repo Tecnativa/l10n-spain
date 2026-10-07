@@ -7,16 +7,25 @@ from odoo import api, fields, models
 class StockMove(models.Model):
     _inherit = "stock.move"
 
-    weight = fields.Float(
-        compute="_compute_weight",
+    deca_weight = fields.Float(
+        compute="_compute_deca_weight",
         digits="Stock Weight",
         store=True,
         compute_sudo=True,
     )
 
-    @api.depends("product_id", "product_uom_qty", "product_uom")
-    def _compute_weight(self):
-        moves_with_weight = self.filtered(lambda moves: moves.product_id.weight > 0.00)
-        for move in moves_with_weight:
-            move.weight = move.product_qty * move.product_id.weight
-        (self - moves_with_weight).weight = 0
+    @api.depends("product_id", "product_uom_qty", "product_uom", "quantity", "state")
+    def _compute_deca_weight(self):
+        uom_categ_kgm = self.env.ref("uom.product_uom_categ_kgm")
+        uom_kgm = self.env.ref("uom.product_uom_kgm")
+        for move in self:
+            product_qty = move.product_qty
+            if move.quantity:
+                product_qty = move.product_uom._compute_quantity(
+                    move.quantity, move.product_id.uom_id, rounding_method="HALF-UP"
+                )
+            if move.product_uom.category_id == uom_categ_kgm:
+                weight = move.product_uom._compute_quantity(product_qty, uom_kgm)
+            else:
+                weight = product_qty * move.product_id.weight
+            move.deca_weight = weight

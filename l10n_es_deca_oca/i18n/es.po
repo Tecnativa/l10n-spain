@@ -109,6 +109,12 @@ msgid "DeCA Version"
 msgstr "Versión DeCA"
 
 #. module: l10n_es_deca_oca
+#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_move__deca_weight
+#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__deca_weight
+msgid "Deca Weight"
+msgstr "Peso"
+
+#. module: l10n_es_deca_oca
 #: model_terms:ir.ui.view,arch_db:l10n_es_deca_oca.report_deca_document
 msgid "Document for electronic Control of Administration (DeCA)"
 msgstr "Documento de control administrativo electrónico (DeCA)"
@@ -216,7 +222,7 @@ msgstr ""
 "española aplicable."
 
 #. module: l10n_es_deca_oca
-#: model:ir.model.fields,help:l10n_es_deca_oca.field_stock_picking__weight
+#: model:ir.model.fields,help:l10n_es_deca_oca.field_stock_picking__deca_weight
 msgid "Total weight of the products in the picking."
 msgstr "Peso total de los productos en el albarán."
 
@@ -258,8 +264,6 @@ msgstr "Unidad"
 #. module: l10n_es_deca_oca
 #. odoo-python
 #: code:addons/l10n_es_deca_oca/models/stock_picking.py:0
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_move__weight
-#: model:ir.model.fields,field_description:l10n_es_deca_oca.field_stock_picking__weight
 #: model_terms:ir.ui.view,arch_db:l10n_es_deca_oca.report_deca_document
 #, python-format
 msgid "Weight"

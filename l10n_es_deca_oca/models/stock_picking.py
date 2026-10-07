@@ -3,8 +3,6 @@
 
 import hashlib
 
-from lxml import etree
-
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
@@ -65,19 +63,19 @@ class StockPicking(models.Model):
     l10n_es_show_deca = fields.Boolean(
         compute="_compute_l10n_es_show_deca",
     )
-    weight = fields.Float(
-        compute="_compute_weight",
+    deca_weight = fields.Float(
+        compute="_compute_deca_weight",
         digits="Stock Weight",
         store=True,
         help="Total weight of the products in the picking.",
         compute_sudo=True,
     )
 
-    @api.depends("move_ids.weight")
-    def _compute_weight(self):
+    @api.depends("move_ids.deca_weight")
+    def _compute_deca_weight(self):
         for picking in self:
-            picking.weight = sum(
-                move.weight for move in picking.move_ids if move.state != "cancel"
+            picking.deca_weight = sum(
+                move.deca_weight for move in picking.move_ids if move.state != "cancel"
             )
 
     @api.depends("picking_type_id.code", "picking_type_id.l10n_es_deca_enabled")
@@ -87,17 +85,6 @@ class StockPicking(models.Model):
                 picking.picking_type_code == "incoming"
                 and picking.picking_type_id.l10n_es_deca_enabled
             )
-
-    @api.model
-    def get_view(self, view_id=None, view_type="form", **options):
-        res = super().get_view(view_id=view_id, view_type=view_type, **options)
-        if view_type == "form":
-            doc = etree.XML(res["arch"])
-            if not doc.xpath("//field[@name='weight']"):
-                for node in doc.xpath("//field[@name='origin']"):
-                    node.addnext(etree.Element("field", {"name": "weight"}))
-            res["arch"] = etree.tostring(doc, encoding="unicode")
-        return res
 
     def _check_deca_required_fields(self):
         for picking in self:
@@ -120,7 +107,7 @@ class StockPicking(models.Model):
             if not sender.vat:
                 missing.append(_("Sender NIF (VAT)"))
 
-            if not picking.weight:
+            if not picking.deca_weight:
                 missing.append(_("Weight"))
 
             if missing:
@@ -150,9 +137,8 @@ class StockPicking(models.Model):
             f"{self.special_authorization_history}"
         )
         for move in self.move_ids:
-            data += (
-                f"{move.product_id.id}{move.quantity}{move.product_uom.id}{move.weight}"
-            )
+            data += f"{move.product_id.id}{move.quantity}"
+            data += f"{move.product_uom.id}{move.deca_weight}"
         return hashlib.md5(data.encode("utf-8")).hexdigest()
 
     def write(self, vals):

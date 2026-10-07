@@ -309,21 +309,17 @@ class TestStockPickingDeca(TransactionCase):
         )
 
     def test_08_weight_computation_and_view(self):
-        """Test weight computations on move and picking, and dynamic view injection."""
+        """Test weight computations on move and picking."""
         # The move has 10 units and product weight is 2.5
         # Force recompute by writing to a dependent field
         self.move.product_uom_qty = 10.0
-        self.assertEqual(self.move.weight, 25.0)
-        self.assertEqual(self.picking.weight, 25.0)
+        self.assertEqual(self.move.deca_weight, 25.0)
+        self.assertEqual(self.picking.deca_weight, 25.0)
 
         # Modify quantity and check if weight updates
         self.move.product_uom_qty = 5.0
-        self.assertEqual(self.move.weight, 12.5)
-        self.assertEqual(self.picking.weight, 12.5)
-
-        # Test dynamic get_view
-        view = self.env["stock.picking"].get_view(view_id=None, view_type="form")
-        self.assertIn('name="weight"', view["arch"])
+        self.assertEqual(self.move.deca_weight, 12.5)
+        self.assertEqual(self.picking.deca_weight, 12.5)
 
     def test_09_check_deca_required_fields(self):
         """Test the required fields validation for DeCA report."""
@@ -366,7 +362,7 @@ class TestStockPickingDeca(TransactionCase):
 
         # 6. Missing weight
         self.move.product_uom_qty = 0
-        self.assertEqual(self.picking.weight, 0.0)
+        self.assertEqual(self.picking.deca_weight, 0.0)
         with self.assertRaises(UserError) as e:
             self.picking._check_deca_required_fields()
         self.assertIn("Weight", str(e.exception))

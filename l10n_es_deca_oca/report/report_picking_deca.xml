@@ -196,7 +196,7 @@
                                             <span t-field="move.product_uom.name" />
                                         </td>
                                         <td class="text-end"><span
-                                                t-field="move.weight"
+                                                t-field="move.deca_weight"
                                             /> kg</td>
                                     </tr>
                                 </t>
