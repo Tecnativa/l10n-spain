@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <!-- Import wizard -->
-    <record model="ir.ui.view" id="l10n_es_partner_import_wizard">
+    <record id="l10n_es_partner_import_wizard" model="ir.ui.view">
         <field name="name">l10n.es.partner.import.form</field>
         <field name="model">l10n.es.partner.import.wizard</field>
         <field name="priority">99</field>
