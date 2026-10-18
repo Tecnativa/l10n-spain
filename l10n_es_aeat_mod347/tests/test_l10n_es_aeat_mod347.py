@@ -34,7 +34,7 @@ class TestL10nEsAeatMod347(TestL10nEsAeatModBase):
             {
                 "name": "9990000000347",
                 "company_id": cls.company.id,
-                "company_vat": "1234567890",
+                "company_vat": "123456789",
                 "contact_name": "Test owner",
                 "statement_type": "N",
                 "support_type": "T",

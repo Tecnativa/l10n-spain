@@ -14,7 +14,7 @@ class Mod347Controller(http.Controller):
         (
             comparison,
             record,
-            redirect,
+            _redirect,
         ) = MailController._check_token_and_record_or_redirect(
             "l10n.es.aeat.mod347.partner_record",
             int(res_id),
@@ -23,7 +23,7 @@ class Mod347Controller(http.Controller):
         if comparison and record:
             try:
                 record.sudo().action_confirm()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 return http.request.render("l10n_es_aeat_mod347.communication_failed")
         return http.request.render("l10n_es_aeat_mod347.communication_success")
 
@@ -34,7 +34,7 @@ class Mod347Controller(http.Controller):
         (
             comparison,
             record,
-            redirect,
+            _redirect,
         ) = MailController._check_token_and_record_or_redirect(
             "l10n.es.aeat.mod347.partner_record",
             int(res_id),
@@ -43,6 +43,6 @@ class Mod347Controller(http.Controller):
         if comparison and record:
             try:
                 record.sudo().action_exception()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 return http.request.render("l10n_es_aeat_mod347.communication_failed")
         return http.request.render("l10n_es_aeat_mod347.communication_success")

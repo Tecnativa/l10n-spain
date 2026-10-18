@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <template id="report_347_partner_document">
-        <t t-call="web.external_layout">
+        <t t-set="address">
+            <address
+                t-field="o.partner_id"
+                t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}'
+            />
+            <div t-if="o.partner_id.vat" class="mt16">
+                <t
+                t-if="o.report_id.company_id.account_fiscal_country_id.vat_label"
+                t-out="o.report_id.company_id.account_fiscal_country_id.vat_label"
+            />
+                <t t-else="">Tax ID</t>: <span t-field="o.partner_id.vat" />
+            </div>
+        </t>
+        <t t-call="web.external_layout" address="address">
             <t t-set="o" t-value="o.with_context({'lang':o.partner_id.lang})" />
             <div class="page">
-                <t t-set="address">
-                    <address
-                        t-field="o.partner_id"
-                        t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}'
-                    />
-                    <div t-if="o.partner_id.vat" class="mt16">
-                        <t
-                        t-if="o.report_id.company_id.account_fiscal_country_id.vat_label"
-                        t-out="o.report_id.company_id.account_fiscal_country_id.vat_label"
-                    />
-                        <t t-else="">Tax ID</t>: <span t-field="o.partner_id.vat" />
-                    </div>
-                </t>
                 <div class="row mt32 mb32">
                     <div t-if="o.operation_key" class="col-auto col-3 mw-100 mb-2">
                         <strong>Operation Key:</strong>
@@ -179,7 +179,6 @@
         <field name="model">l10n.es.aeat.mod347.partner_record</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">l10n_es_aeat_mod347.report_347_partner</field>
-        <field name="report_file">l10n_es_aeat_mod347.report_347_partner</field>
         <field name="binding_model_id" ref="model_l10n_es_aeat_mod347_partner_record" />
         <field name="binding_type">report</field>
     </record>

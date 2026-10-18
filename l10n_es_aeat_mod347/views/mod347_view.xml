@@ -18,16 +18,11 @@
                 <field name="amount" />
                 <field name="cash_amount" />
                 <field name="real_estate_transmissions_amount" />
-                <button
-                    type="object"
-                    name="button_print"
-                    icon="fa-print"
-                    title="Print"
-                />
+                <button type="object" name="button_print" icon="print" title="Print" />
                 <button
                     type="object"
                     name="action_send"
-                    icon="fa-envelope"
+                    icon="mail"
                     invisible="state != 'pending'"
                     title="Send email"
                 />
@@ -35,14 +30,14 @@
                 <button
                     type="object"
                     name="action_confirm"
-                    icon="fa-check"
+                    icon="check"
                     invisible="state not in ('pending', 'sent', 'exception')"
                     title="Confirm as valid"
                 />
                 <button
                     type="object"
                     name="action_exception"
-                    icon="fa-times"
+                    icon="close"
                     invisible="state not in ('pending', 'sent', 'confirmed')"
                     title="Set to invalid"
                 />
@@ -385,7 +380,7 @@
                     string="Send emails"
                     invisible="state != 'calculated'"
                     confirm="This will enqueue all the pending confirmation emails for this report for sending to the invoicing contact. Are you sure you want to continue?"
-                    icon="fa-envelope"
+                    icon="mail"
                 />
             </button>
             <sheet position="inside">
@@ -394,7 +389,7 @@
                         class="oe_stat_button"
                         name="btn_list_records"
                         type="object"
-                        icon="fa-file"
+                        icon="description"
                     >
                         <field
                             name="total_partner_records"

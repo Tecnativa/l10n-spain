@@ -392,21 +392,23 @@ class L10nEsAeatMod347PartnerRecord(models.Model):
             ("C", "C - Cobros por cuenta de terceros superiores al límite (3)"),
             (
                 "D",
-                "D - Adquisiciones efectuadas por Entidades Públicas "
-                "(...) superiores al límite (1)",
+                (
+                    "D - Adquisiciones efectuadas por Entidades Públicas "
+                    "(...) superiores al límite (1)"
+                ),
             ),
             (
                 "E",
-                "E - Subvenciones, auxilios y ayudas satisfechas por Ad. "
-                "Públicas superiores al límite (1)",
+                (
+                    "E - Subvenciones, auxilios y ayudas satisfechas por Ad. "
+                    "Públicas superiores al límite (1)"
+                ),
             ),
             ("F", "F - Ventas agencia viaje"),
             ("G", "G - Compras agencia viaje"),
         ],
     )
-    partner_id = fields.Many2one(
-        comodel_name="res.partner", string="Partner", required=True
-    )
+    partner_id = fields.Many2one(comodel_name="res.partner", required=True)
     partner_vat = fields.Char(string="VAT number", size=9)
     representative_vat = fields.Char(
         string="L.R. VAT number", size=9, help="Legal Representative VAT number"
@@ -710,7 +712,6 @@ class L10nEsAeatMod347RealStateRecord(models.Model):
     )
     partner_id = fields.Many2one(
         comodel_name="res.partner",
-        string="Partner",
         required=True,
     )
     partner_vat = fields.Char(
