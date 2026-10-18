@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <template id="report_347_partner_document">
         <t t-call="web.external_layout">
@@ -12,13 +12,13 @@
                     <div t-if="o.partner_id.vat" class="mt16">
                         <t
                         t-if="o.report_id.company_id.account_fiscal_country_id.vat_label"
-                        t-esc="o.report_id.company_id.account_fiscal_country_id.vat_label"
+                        t-out="o.report_id.company_id.account_fiscal_country_id.vat_label"
                     />
                         <t t-else="">Tax ID</t>: <span t-field="o.partner_id.vat" />
                     </div>
                 </t>
                 <div class="row mt32 mb32">
-                    <div class="col-auto col-3 mw-100 mb-2" t-if="o.operation_key">
+                    <div t-if="o.operation_key" class="col-auto col-3 mw-100 mb-2">
                         <strong>Operation Key:</strong>
                         <p class="m-0" t-field="o.operation_key" />
                     </div>
@@ -63,13 +63,13 @@
                                 <tr t-foreach="o.move_record_ids" t-as="l">
                                     <td>
                                         <span
-                                            t-esc="l.move_id.name if l.move_id.move_type in ['out_invoice', 'out_refund'] else (l.move_id.ref or l.move_id.name)"
+                                            t-out="l.move_id.name if l.move_id.move_type in ['out_invoice', 'out_refund'] else (l.move_id.ref or l.move_id.name)"
                                         />
                                     </td>
                                     <td>
                                         <span t-field="l.move_id.date" />
                                     </td>
-                                    <td class="text-end" id="subtotal">
+                                    <td id="subtotal" class="text-end">
                                         <span t-field="l.amount" />
                                     </td>
                                 </tr>
@@ -106,7 +106,7 @@
                                     <td>
                                         <span t-field="l.date" />
                                     </td>
-                                    <td class="text-end" id="subtotal">
+                                    <td id="subtotal" class="text-end">
                                         <span t-field="l.balance" />
                                     </td>
                                 </tr>
