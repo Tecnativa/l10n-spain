@@ -3,8 +3,8 @@
 # Copyright 2012-2019 Tecnativa - Pedro M. Baeza
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-import odoo.tests.common as common
 from odoo import fields
+from odoo.tests import common
 
 
 class TestL10nEsAccountAsset(common.TransactionCase):
