@@ -9,9 +9,11 @@ class AccountMove(models.Model):
 
     def contrast_aeat(self):
         invalid_invoices = self.filtered(
-            lambda invoice: not invoice.sii_enabled
-            or invoice.state != "posted"
-            or (invoice.aeat_state != "sent" and not invoice.aeat_send_failed)
+            lambda invoice: (
+                not invoice.sii_enabled
+                or invoice.state != "posted"
+                or (invoice.aeat_state != "sent" and not invoice.aeat_send_failed)
+            )
         )
         if invalid_invoices:
             raise exceptions.UserError(
