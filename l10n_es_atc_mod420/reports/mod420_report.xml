@@ -150,7 +150,7 @@
         <field name="binding_type">report</field>
         <field
             name="xsd_schema"
-            type="base64"
+            type="bytes"
             file="l10n_es_atc_mod420/reports/Presentacion-420-XMLSchema.xsd"
         />
     </record>
