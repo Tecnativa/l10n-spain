@@ -214,7 +214,7 @@
         <field name="binding_type">report</field>
         <field
             name="xsd_schema"
-            type="base64"
+            type="bytes"
             file="l10n_es_atc_mod425/reports/Presentacion-425-XMLSchema.xsd"
         />
     </record>
