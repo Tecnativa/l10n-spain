@@ -136,7 +136,7 @@ class L10nEsAtcmod417Report(models.Model):
     counterpart_account_id = fields.Many2one(
         comodel_name="account.account",
         string="Counterpart account",
-        default=_default_counterpart_417,
+        default=lambda self: self._default_counterpart_417(),
     )
     allow_posting = fields.Boolean(string="Allow posting", default=True)
 
@@ -201,7 +201,7 @@ class L10nEsAtcmod417Report(models.Model):
                 msg = self.env._("Select an account for receiving the money")
         if msg:
             # Don't raise error, because data is not used
-            # raise exceptions.Warning(msg)
+            # raise exceptions.UserError(msg)
             pass
         return super().button_confirm()
 
