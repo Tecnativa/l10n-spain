@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <record id="view_l10n_es_atc_mod417_report_tree" model="ir.ui.view">
         <field name="name">l10n.es.atc.mod417.report.tree</field>
@@ -118,8 +118,8 @@
     </record>
 
     <record
-        model="ir.actions.act_window.view"
         id="action_l10n_es_atc_mod417_report_tree"
+        model="ir.actions.act_window.view"
     >
         <field name="sequence" eval="2" />
         <field name="view_mode">list</field>
@@ -128,8 +128,8 @@
     </record>
 
     <record
-        model="ir.actions.act_window.view"
         id="action_l10n_es_atc_mod417_report_form"
+        model="ir.actions.act_window.view"
     >
         <field name="sequence" eval="3" />
         <field name="view_mode">form</field>

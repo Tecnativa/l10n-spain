@@ -47,7 +47,7 @@ class L10nEsAtcmod417Report(models.Model):
     casilla_23 = fields.Monetary(
         string="[23] Traveler Base",
         default=0,
-        help="Basis of the fee in the passenger regime made by the subject " "passive",
+        help="Basis of the fee in the passenger regime made by the subject passive",
     )
     casilla_24 = fields.Monetary(
         string="[24] Traveler Fees",
