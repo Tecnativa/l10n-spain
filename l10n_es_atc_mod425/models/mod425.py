@@ -274,10 +274,10 @@ class L10nEsAtcMod425Report(models.Model):
         store=True,
     )
     casilla_90 = fields.Monetary(
-        string="[90] Compensación régimen especial de agricultura, " "ganadería y pesca"
+        string="[90] Compensación régimen especial de agricultura, ganadería y pesca"
     )
     casilla_91 = fields.Monetary(
-        string="[91] Regularización de cuotas soportadas por bienes " "de inversión"
+        string="[91] Regularización de cuotas soportadas por bienes de inversión"
     )
     casilla_92 = fields.Monetary(
         string="[92] Regularización de cuotas soportadas antes del "
@@ -350,32 +350,34 @@ class L10nEsAtcMod425Report(models.Model):
             report.casilla_74 = (
                 sum(
                     report.tax_line_ids.filtered(
-                        lambda x: x.field_number
-                        in (
-                            1,
-                            4,
-                            7,
-                            10,
-                            13,
-                            16,  # Régimen ordinario
-                            19,
-                            22,
-                            25,
-                            28,
-                            31,  # Bienes usados, etc - no incluido aún
-                            34,
-                            37,
-                            40,
-                            43,
-                            46,  # Régimen especial de objetos - no incluido aún
-                            49,
-                            52,
-                            55,
-                            58,
-                            61,
-                            64,  # Criterio de caja - no incluido aún
-                            67,  # Agencias de viajes - no incluido aún
-                            70,  # Modificación bases y cuotas
+                        lambda x: (
+                            x.field_number
+                            in (
+                                1,
+                                4,
+                                7,
+                                10,
+                                13,
+                                16,  # Régimen ordinario
+                                19,
+                                22,
+                                25,
+                                28,
+                                31,  # Bienes usados, etc - no incluido aún
+                                34,
+                                37,
+                                40,
+                                43,
+                                46,  # Régimen especial de objetos - no incluido aún
+                                49,
+                                52,
+                                55,
+                                58,
+                                61,
+                                64,  # Criterio de caja - no incluido aún
+                                67,  # Agencias de viajes - no incluido aún
+                                70,  # Modificación bases y cuotas
+                            )
                         )
                     ).mapped("amount")
                 )
@@ -390,33 +392,35 @@ class L10nEsAtcMod425Report(models.Model):
             report.casilla_79 = (
                 sum(
                     report.tax_line_ids.filtered(
-                        lambda x: x.field_number
-                        in (
-                            3,
-                            6,
-                            9,
-                            12,
-                            15,
-                            18,  # Régimen ordinario
-                            21,
-                            24,
-                            27,
-                            30,
-                            33,  # Bienes usados, etc - no incluido aún
-                            36,
-                            39,
-                            42,
-                            45,
-                            48,  # Régimen especial de objetos -  no incluido aún
-                            51,
-                            54,
-                            57,
-                            60,
-                            63,
-                            66,  # Criterio de caja - no incluido aún
-                            69,  # Agencias de viajes - no incluido aún
-                            71,  # Modificación bases y cuotas
-                            76,
+                        lambda x: (
+                            x.field_number
+                            in (
+                                3,
+                                6,
+                                9,
+                                12,
+                                15,
+                                18,  # Régimen ordinario
+                                21,
+                                24,
+                                27,
+                                30,
+                                33,  # Bienes usados, etc - no incluido aún
+                                36,
+                                39,
+                                42,
+                                45,
+                                48,  # Régimen especial de objetos -  no incluido aún
+                                51,
+                                54,
+                                57,
+                                60,
+                                63,
+                                66,  # Criterio de caja - no incluido aún
+                                69,  # Agencias de viajes - no incluido aún
+                                71,  # Modificación bases y cuotas
+                                76,
+                            )
                         )
                     ).mapped("amount")
                 )
