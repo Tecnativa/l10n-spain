@@ -20,21 +20,16 @@ _logger = logging.getLogger("atc")
 
 @tagged("post_install", "-at_install")
 class TestL10nEsAtcMod415(TestL10nEsAeatModBase):
-    @classmethod
-    def _chart_of_accounts_create(cls):
-        _logger.debug("Creating chart of account")
-        cls.company = cls.env["res.company"].create(
-            {"name": "Canary test company", "currency_id": cls.env.ref("base.EUR").id}
-        )
-        cls.env.ref("base.group_multi_company").write({"users": [(4, cls.env.uid)]})
-        cls.env.user.write(
-            {"company_ids": [(4, cls.company.id)], "company_id": cls.company.id}
-        )
-        cls.env["account.chart.template"].try_loading(
-            "es_canary_pymes", company=cls.company, install_demo=False
-        )
-        cls.with_context(company_id=cls.company.id)
-        return True
+    # Filing an ATC declaration needs the ATC group, which 20.0 makes visible:
+    # the tests run as the BaseCommon test user, not as an administrator
+    _test_user_groups = (
+        *TestL10nEsAeatModBase._test_user_groups,
+        "l10n_es_atc.group_account_atc",
+    )
+
+    # The chart is the one of the base: 20.0 merged the Canary templates into
+    # es_common, so es_pymes already carries the IGIC taxes this declaration
+    # reads and there is nothing left to override.
 
     @classmethod
     def setUpClass(cls):
@@ -44,7 +39,7 @@ class TestL10nEsAtcMod415(TestL10nEsAeatModBase):
             {
                 "name": "9990000000415",
                 "company_id": cls.company.id,
-                "company_vat": "1234567890",
+                "company_vat": "123456789",
                 "contact_name": "Test owner",
                 "statement_type": "N",
                 "support_type": "T",
