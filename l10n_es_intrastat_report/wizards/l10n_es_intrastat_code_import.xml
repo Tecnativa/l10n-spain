@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <data>
     <!-- Import wizard -->
-    <record model="ir.ui.view" id="view_l10n_es_intrastat_code_import">
+    <record id="view_l10n_es_intrastat_code_import" model="ir.ui.view">
         <field name="model">l10n.es.intrastat.code.import</field>
         <field name="arch" type="xml">
             <form string="Import Spanish Product HS Codes">
