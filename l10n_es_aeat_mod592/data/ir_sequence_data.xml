@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <odoo noupdate="1">
     <!-- Sequence for l10n.es.aeat.mod592.report.line.manufacturer -->
     <record id="seq_mod592_report_manufacturer" model="ir.sequence">

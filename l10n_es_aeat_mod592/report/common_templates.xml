@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <template id="l10n_es_aeat_mod592.mod592_acquirer_summary">
-        <div class="col-xs-12 text-left" id="mod592_acquirer_summary_div">
+        <div id="mod592_acquirer_summary_div" class="col-xs-12 text-left">
             <table
-                class="detail_table table table-sm"
                 id="mod592_acquirer_summary_table"
+                class="detail_table table table-sm"
             >
                 <tbody class="invoice_tbody">
                     <tr>
@@ -100,10 +100,10 @@
         </div>
     </template>
     <template id="l10n_es_aeat_mod592.mod592_manufacturer_summary">
-        <div class="col-xs-12 text-left" id="mod592_manufacturer_summary_div">
+        <div id="mod592_manufacturer_summary_div" class="col-xs-12 text-left">
             <table
-                class="detail_table table table-sm"
                 id="mod592_manufacturer_summary_table"
+                class="detail_table table table-sm"
             >
                 <tbody class="invoice_tbody">
                     <tr>
@@ -247,10 +247,10 @@
         <td id="data_supplier_social_reason">
             <span t-field="l.supplier_social_reason" />
         </td>
-        <td class="text-right" id="data_kgs">
+        <td id="data_kgs" class="text-right">
             <span t-field="l.kgs" />
         </td>
-        <td class="text-right" id="data_no_recycling_kgs">
+        <td id="data_no_recycling_kgs" class="text-right">
             <span t-field="l.no_recycling_kgs" />
         </td>
         <td id="data_entry_note">
@@ -303,10 +303,10 @@
         <td id="data_supplier_social_reason">
             <span t-field="l.supplier_social_reason" />
         </td>
-        <td class="text-right" id="data_kgs">
+        <td id="data_kgs" class="text-right">
             <span t-field="l.kgs" />
         </td>
-        <td class="text-right" id="data_no_recycling_kgs">
+        <td id="data_no_recycling_kgs" class="text-right">
             <span t-field="l.no_recycling_kgs" />
         </td>
         <td id="data_entry_note">
