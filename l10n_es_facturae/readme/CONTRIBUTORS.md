@@ -13,3 +13,5 @@
 - Alberto Martínez (<alberto.martinez@sygel.es>)
 - Carolina Fernandez (<http://www.tecnativa.com>)
 - Alex Garcia (<alex@studio73.es>)
+- [Tecnativa](https://www.tecnativa.com):
+  - Carlos Dauden
