@@ -6,8 +6,9 @@ from odoo.tools import file_open
 def post_init_hook(env):
     """We need to replace the existing spanish taxes with the new field values"""
     companies = env.companies.filtered(
-        lambda company: company.chart_template
-        and company.chart_template.startswith("es_")
+        lambda company: (
+            company.chart_template and company.chart_template.startswith("es_")
+        )
     )
     current_taxes = env["account.tax"].search(
         env["account.tax"]._check_company_domain(companies)

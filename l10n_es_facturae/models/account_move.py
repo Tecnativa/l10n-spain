@@ -187,7 +187,6 @@ class AccountMove(models.Model):
             if partner_bank and len(partner_bank.acc_number) < 5:
                 raise ValidationError(self.env._("Selected account is too small"))
         self.validate_company_facturae_fields(self.company_id)
-        return
 
     def validate_company_facturae_fields(self, company_id):
         if not company_id.partner_id.vat:
@@ -204,7 +203,6 @@ class AccountMove(models.Model):
             raise ValidationError(self.env._("Company zip not provided"))
         if len(company_id.vat) < 3:
             raise ValidationError(self.env._("Company vat is too small"))
-        return
 
     def _get_facturae_move_attachments(self):
         result = []

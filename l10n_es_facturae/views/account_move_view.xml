@@ -84,7 +84,7 @@
             </notebook>
         </field>
     </record>
-    <record model="ir.ui.view" id="view_facturae_fields">
+    <record id="view_facturae_fields" model="ir.ui.view">
         <field name="name">account.move.line.form (in l10n_es_facturae_fields)</field>
         <field name="model">account.move.line</field>
         <field name="priority">100</field>
