@@ -5,6 +5,7 @@
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
+from odoo.fields import Domain
 from odoo.tools import float_is_zero
 
 from .misc import FISCAL_ACQUIRERS, FISCAL_MANUFACTURERS, PRODUCT_KEYS
@@ -69,9 +70,7 @@ class ProductTemplate(models.Model):
 
     @api.constrains("plastic_weight_non_recyclable", "plastic_tax_weight")
     def check_plastic_tax_weight(self):
-        precision = self.env["decimal.precision"].precision_get(
-            "Product Unit of Measure"
-        )
+        precision = self.env["decimal.precision"].precision_get("Product Unit")
         for item in self:
             weight1 = item.plastic_weight_non_recyclable
             weight2 = item.plastic_tax_weight
@@ -87,10 +86,7 @@ class ProductTemplate(models.Model):
                 )
 
     def _search_plastic_field(self, field_name, operator, value):
-        products = self.env["product.product"].search(
-            [(field_name, operator, value)], limit=None
-        )
-        return [("id", "in", products.mapped("product_tmpl_id").ids)]
+        return Domain("product_variant_ids", "any", [(field_name, operator, value)])
 
     def _search_is_plastic_tax(self, operator, value):
         return self._search_plastic_field("is_plastic_tax", operator, value)

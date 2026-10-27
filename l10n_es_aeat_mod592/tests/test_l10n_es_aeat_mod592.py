@@ -9,6 +9,7 @@ from freezegun import freeze_time
 
 from odoo import fields
 from odoo.exceptions import UserError
+from odoo.fields import Command
 from odoo.tests import Form
 
 from odoo.addons.l10n_es_aeat.tests.test_l10n_es_aeat_mod_base import (
@@ -26,6 +27,14 @@ _logger = logging.getLogger("aeat.592")
 
 
 class TestL10nEsAeatMod592(TestL10nEsAeatModBase):
+    _test_user_groups = (
+        *TestL10nEsAeatModBase._test_user_groups,
+        "stock.group_stock_user",
+        "product.group_product_manager",
+        "uom.group_uom",
+        "l10n_es_aeat_mod592.group_mod592_acquirer",
+        "l10n_es_aeat_mod592.group_mod592_manufacturer",
+    )
     # Set 'debug' attribute to True to easy debug this test
     # Do not forget to include '--log-handler aeat:DEBUG' in Odoo command line
     debug = False
@@ -89,7 +98,7 @@ class TestL10nEsAeatMod592(TestL10nEsAeatModBase):
             {
                 "name": "9990000000390",
                 "company_id": cls.company.id,
-                "company_vat": "1234567890",
+                "company_vat": "123456789",
                 "contact_name": "Test owner",
                 "statement_type": "N",
                 "support_type": "T",
@@ -102,18 +111,22 @@ class TestL10nEsAeatMod592(TestL10nEsAeatModBase):
             }
         )
         cls.report_obj = cls.env["ir.actions.report"]
-        # Reset sequences for testing
-        cls.env.ref(
-            "l10n_es_aeat_mod592.seq_mod592_report_acquirer"
-        ).number_next_actual = 1
-        cls.env.ref(
-            "l10n_es_aeat_mod592.seq_mod592_report_manufacturer"
-        ).number_next_actual = 1
+
+    def setUp(self):
+        super().setUp()
+        # The entry numbers come from standard (non transactional) sequences
+        for xmlid in ("seq_mod592_report_acquirer", "seq_mod592_report_manufacturer"):
+            self.env.ref(f"l10n_es_aeat_mod592.{xmlid}").sudo().number_next_actual = 1
 
     def test_plastic_weight_non_recyclable(self):
         with self.assertRaises(UserError):
             self.product_a.write({"plastic_weight_non_recyclable": 12})
         self.product_a.plastic_weight_non_recyclable = 8
+        templates = self.env["product.template"].search(
+            [("is_plastic_tax", "=", True), ("plastic_type_key", "=", "A")]
+        )
+        self.assertIn(self.product_a.product_tmpl_id, templates)
+        self.assertNotIn(self.product_b.product_tmpl_id, templates)
 
     @freeze_time("2024-01-01", tick=True)
     def test_model_592(self):
@@ -189,7 +202,9 @@ class TestL10nEsAeatMod592(TestL10nEsAeatModBase):
                 "plastic_tax_regime_acquirer": "C",
             }
         )
-        self.model592.manufacturer_line_ids = [(0, 0, {"stock_move_id": sm_c.id})]
+        self.model592.manufacturer_line_ids = [
+            Command.create({"stock_move_id": sm_c.id})
+        ]
         self.assertEqual(self.model592.total_manufacturer_entries, 1)
         self.assertEqual(self.model592.total_weight_manufacturer, 6)  # 6 = 2 * 3
         self.assertEqual(
@@ -254,3 +269,123 @@ class TestL10nEsAeatMod592(TestL10nEsAeatModBase):
         self.assertRegex(res_text, "A002")
         self.assertRegex(res_text, "M001")
         self.assertRegex(res_text, self.picking.name)
+
+    def _validate_picking(self, picking_type, partner, lines):
+        picking_form = Form(
+            self.env["stock.picking"].with_context(
+                default_picking_type_id=picking_type.id
+            )
+        )
+        picking_form.partner_id = partner
+        for product, qty, uom in lines:
+            with picking_form.move_ids.new() as move_form:
+                move_form.product_id = product
+                move_form.product_uom_qty = qty
+                if uom:
+                    move_form.uom_id = uom
+        picking = picking_form.save()
+        picking.action_confirm()
+        picking.button_validate()
+        return picking
+
+    def _scrap(self, picking, product, qty):
+        scrap_form = Form.from_action(self.env, picking.action_scrap())
+        scrap_form.product_id = product
+        scrap_form.quantity = qty
+        scrap_form.save().action_scrap()
+
+    def _return(self, picking, qty):
+        action = picking.action_return()
+        return_picking = self.env["stock.picking"].browse(action["res_id"])
+        with (
+            Form(return_picking) as return_form,
+            return_form.move_ids.edit(0) as move_form,
+        ):
+            move_form.product_uom_qty = qty
+        return_picking.action_confirm()
+        return_picking.button_validate()
+        return return_picking
+
+    @freeze_time("2024-03-15")
+    def test_model_592_acquirer_csv_export(self):
+        """Intra-community acquisition, scrap, return to the supplier and
+        shipping outside Spain, exported to the CSV file the AEAT imports."""
+        supplier = self.env["res.partner"].create(
+            {
+                "name": "Test FR supplier",
+                "country_id": self.env.ref("base.fr").id,
+                "vat": "FR23334175221",
+            }
+        )
+        customer = self.env["res.partner"].create(
+            {
+                "name": "Test DE customer",
+                "country_id": self.env.ref("base.de").id,
+                "vat": "DE123456788",
+            }
+        )
+        pack = self.env["uom.uom"].create(
+            {
+                "name": "Pack of 6",
+                "relative_factor": 6,
+                "relative_uom_id": self.env.ref("uom.product_uom_unit").id,
+            }
+        )
+        self.product_a.is_storable = True
+        self.product_b.write({"is_storable": True, "uom_ids": [Command.link(pack.id)]})
+        warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.company.id)], limit=1
+        )
+        receipt = self._validate_picking(
+            warehouse.in_type_id, supplier, [(self.product_a, 10, False)]
+        )
+        receipt_b = self._validate_picking(
+            warehouse.in_type_id, supplier, [(self.product_b, 2, pack)]
+        )
+        self._scrap(receipt, self.product_a, 1)
+        return_picking = self._return(receipt, 2)
+        delivery = self._validate_picking(
+            warehouse.out_type_id, customer, [(self.product_a, 3, False)]
+        )
+        self.model592.calculate()
+        self.assertEqual(
+            self.model592.acquirer_line_ids.mapped("concept"),
+            ["1", "1", "3", "4", "2"],
+        )
+        self.assertEqual(self.model592.acquirer_line_ids.mapped("error_text"), [""] * 5)
+        self.assertFalse(self.model592.show_error_acquirer)
+        self.model592.button_confirm()
+        action = self.model592.export_csv_acquirer()
+        content = self.env["ir.actions.report"]._render_csv(
+            action["report_name"], self.model592.ids, action["data"]
+        )[0]
+        self.assertEqual(
+            content.split("\r\n"),
+            [
+                (
+                    "Número Asiento;Fecha Hecho Contabilizado;Concepto;Clave Producto;"
+                    "Descripción Producto;Régimen Fiscal;Justificante;"
+                    "Prov./Dest.: Tipo Documento;Prov./Dest.: Nº documento;"
+                    "Prov./Dest.: Razón social;Kilogramos;Kilogramos No Reciclados;"
+                    "Observaciones"
+                ),
+                (
+                    f"A001;15-03-2024;1;A;;A;{receipt.name};2;FR23334175221;"
+                    "Test FR supplier;100,0;60,0;"
+                ),
+                (
+                    f"A002;15-03-2024;1;B;;B;{receipt_b.name};2;FR23334175221;"
+                    "Test FR supplier;60,0;36,0;"
+                ),
+                f"A003;15-03-2024;3;A;;;{receipt.name};;;;10,0;6,0;",
+                (
+                    f"A004;15-03-2024;4;A;;;{return_picking.name};2;FR23334175221;"
+                    "Test FR supplier;20,0;12,0;"
+                ),
+                (
+                    f"A005;15-03-2024;2;A;;;{delivery.name};2;DE123456788;"
+                    "Test DE customer;30,0;18,0;"
+                ),
+                "",
+            ],
+        )

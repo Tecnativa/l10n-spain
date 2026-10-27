@@ -13,18 +13,12 @@ class Mod592XlsxManufacturer(models.AbstractModel):
         sheet = workbook.add_worksheet(self.env._("Manufacturer Items"))
         # header
         model = self.env["l10n.es.aeat.mod592.report.line.manufacturer"]
-        next_col = 0
-        for info_key in model._get_csv_report_header():
-            sheet.write(0, next_col, info_key)
-            next_col += 1
+        for col, info_key in enumerate(model._get_csv_report_header()):
+            sheet.write(0, col, info_key)
         # content
-        next_row = 1
-        for obj in mod592.manufacturer_line_ids:
-            next_col = 0
-            for val_item in obj._get_csv_report_info_values():
-                sheet.write(next_row, next_col, val_item)
-                next_col += 1
-            next_row += 1
+        for row, obj in enumerate(mod592.manufacturer_line_ids, start=1):
+            for col, val_item in enumerate(obj._get_csv_report_info_values()):
+                sheet.write(row, col, val_item)
 
 
 class Mod592XlsxAcquirer(models.AbstractModel):
@@ -37,15 +31,9 @@ class Mod592XlsxAcquirer(models.AbstractModel):
         sheet = workbook.add_worksheet(self.env._("Acquirer Items"))
         # header
         model = self.env["l10n.es.aeat.mod592.report.line.acquirer"]
-        next_col = 0
-        for info_key in model._get_csv_report_header():
-            sheet.write(0, next_col, info_key)
-            next_col += 1
+        for col, info_key in enumerate(model._get_csv_report_header()):
+            sheet.write(0, col, info_key)
         # content
-        next_row = 1
-        for obj in mod592.acquirer_line_ids:
-            next_col = 0
-            for val_item in obj._get_csv_report_info_values():
-                sheet.write(next_row, next_col, val_item)
-                next_col += 1
-            next_row += 1
+        for row, obj in enumerate(mod592.acquirer_line_ids, start=1):
+            for col, val_item in enumerate(obj._get_csv_report_info_values()):
+                sheet.write(row, col, val_item)

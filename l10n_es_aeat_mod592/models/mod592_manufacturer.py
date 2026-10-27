@@ -20,14 +20,18 @@ class L10nEsAeatmod592LineManufacturer(models.Model):
             ("2", "(2) Manufacturing"),
             (
                 "3",
-                "(3) Return of products for destruction or reincorporation into "
-                "the manufacturing process",
+                (
+                    "(3) Return of products for destruction or reincorporation "
+                    "into the manufacturing process"
+                ),
             ),
             ("4", "(4) Delivery or making available of the products accounted for"),
             (
                 "5",
-                "(5) Other cancellations of the products accounted for other than "
-                "their delivery or availability",
+                (
+                    "(5) Other cancellations of the products accounted for other "
+                    "than their delivery or availability"
+                ),
             ),
         ],
         compute="_compute_concept",
@@ -48,10 +52,10 @@ class L10nEsAeatmod592LineManufacturer(models.Model):
     @api.depends("partner_id", "stock_move_id")
     def _compute_concept(self):
         for item in self:
-            concept = ""
+            concept = False
             doc_type = item.partner_id.plastic_document_type
             dest_loc_usage = item.stock_move_id.location_dest_id.usage
-            is_scrap = bool(item.stock_move_id.scrap_id)
+            is_scrap = item.stock_move_id.is_scrap
             # Initial Existence
             if dest_loc_usage == "internal":
                 concept = "1"

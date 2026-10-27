@@ -44,9 +44,7 @@ class ProductProduct(models.Model):
 
     @api.constrains("plastic_weight_non_recyclable", "plastic_tax_weight")
     def check_plastic_weight_non_recyclable(self):
-        precision = self.env["decimal.precision"].precision_get(
-            "Product Unit of Measure"
-        )
+        precision = self.env["decimal.precision"].precision_get("Product Unit")
         for item in self:
             weight1 = item.plastic_weight_non_recyclable
             weight2 = item.plastic_tax_weight

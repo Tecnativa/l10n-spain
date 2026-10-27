@@ -19,7 +19,14 @@ class ResPartner(models.Model):
         store=True,
     )
 
-    @api.depends("vat", "country_id", "aeat_identification", "aeat_identification_type")
+    @api.depends(
+        "vat",
+        "country_id",
+        "l10n_es_passport",
+        "l10n_es_foreign_id",
+        "l10n_es_res_cert",
+        "l10n_es_other_id",
+    )
     def _compute_plastic_document_type(self):
         for partner in self:
             idenfier_type = partner._parse_aeat_vat_info()[1]

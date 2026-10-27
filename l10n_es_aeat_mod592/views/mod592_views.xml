@@ -51,7 +51,7 @@
                     name="export_csv_manufacturer"
                     string="Export CSV Manufacturer"
                     type="object"
-                    icon="fa-share"
+                    icon="share"
                     invisible="state!='done' or total_manufacturer_entries==0"
                     groups="l10n_es_aeat_mod592.group_mod592_manufacturer"
                 />
@@ -59,7 +59,7 @@
                     name="export_xlsx_manufacturer"
                     string="Export XLSX Manufacturer"
                     type="object"
-                    icon="fa-share"
+                    icon="share"
                     invisible="state!='done' or total_manufacturer_entries == 0"
                     groups="l10n_es_aeat_mod592.group_mod592_manufacturer"
                 />
@@ -68,7 +68,7 @@
                     name="export_csv_acquirer"
                     string="Export CSV Acquirer"
                     type="object"
-                    icon="fa-share"
+                    icon="share"
                     invisible="state!='done' or total_acquirer_entries == 0"
                     groups="l10n_es_aeat_mod592.group_mod592_acquirer"
                 />
@@ -76,7 +76,7 @@
                     name="export_xlsx_acquirer"
                     string="Export XLSX Acquirer"
                     type="object"
-                    icon="fa-share"
+                    icon="share"
                     invisible="state!='done' or total_acquirer_entries == 0"
                     groups="l10n_es_aeat_mod592.group_mod592_acquirer"
                 />
@@ -88,7 +88,7 @@
                         name="view_action_mod592_report_line_acquirer"
                         type="object"
                         invisible="num_lines_acquirer==0 or not company_plastic_acquirer"
-                        icon="fa-list"
+                        icon="format_list_bulleted"
                         groups="l10n_es_aeat_mod592.group_mod592_acquirer"
                     >
                         <field
@@ -102,7 +102,7 @@
                         name="view_action_mod592_report_line_manufacturer"
                         type="object"
                         invisible="num_lines_manufacturer==0 or not company_plastic_manufacturer"
-                        icon="fa-list"
+                        icon="format_list_bulleted"
                         groups="l10n_es_aeat_mod592.group_mod592_manufacturer"
                     >
                         <field

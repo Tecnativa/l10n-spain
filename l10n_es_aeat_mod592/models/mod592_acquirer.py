@@ -41,11 +41,11 @@ class L10nEsAeatmod592LineAcquirer(models.Model):
     @api.depends("partner_id", "stock_move_id")
     def _compute_concept(self):
         for item in self:
-            concept = ""
+            concept = False
             doc_type = item.partner_id.plastic_document_type
             orig_loc_usage = item.stock_move_id.location_id.usage
             dest_loc_usage = item.stock_move_id.location_dest_id.usage
-            is_scrap = bool(item.stock_move_id.scrap_id)
+            is_scrap = item.stock_move_id.is_scrap
             # Intracomunitary Acquisitions
             if orig_loc_usage == "supplier" and doc_type == "2":
                 concept = "1"

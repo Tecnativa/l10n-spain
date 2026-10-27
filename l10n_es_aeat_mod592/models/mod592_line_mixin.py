@@ -52,9 +52,7 @@ class L10nEsAeatmod592LineMixin(models.AbstractModel):
         store=True,
     )
     entry_note = fields.Text(string="Entries observation")
-    stock_move_id = fields.Many2one(
-        comodel_name="stock.move", string="Stock Move", required=True
-    )
+    stock_move_id = fields.Many2one(comodel_name="stock.move", required=True)
     product_id = fields.Many2one(
         comodel_name="product.product", related="stock_move_id.product_id"
     )
@@ -64,7 +62,7 @@ class L10nEsAeatmod592LineMixin(models.AbstractModel):
     product_uom_qty = fields.Float(
         compute="_compute_product_uom_qty",
         store=True,
-        digits="Product Unit of Measure",
+        digits="Product Unit",
     )
     picking_id = fields.Many2one(
         comodel_name="stock.picking", related="stock_move_id.picking_id"
@@ -124,14 +122,14 @@ class L10nEsAeatmod592LineMixin(models.AbstractModel):
                 item.partner_id.name if item.concept != "3" else ""
             )
 
-    @api.depends("stock_move_id", "stock_move_id.product_uom_qty")
+    @api.depends("stock_move_id", "stock_move_id.quantity", "stock_move_id.uom_id")
     def _compute_product_uom_qty(self):
+        # The quantity moved, not the demand: 20.0 scrap moves keep a demand of 0
         for item in self:
-            qty = item.stock_move_id.product_uom_qty
-            if item.stock_move_id.product_uom != item.product_id.uom_id:
-                qty = item.stock_move_id.product_uom._compute_quantity(
-                    qty, item.product_id.uom_id
-                )
+            move = item.stock_move_id
+            qty = move.quantity
+            if move.uom_id != item.product_id.uom_id:
+                qty = move.uom_id._compute_quantity(qty, item.product_id.uom_id)
             item.product_uom_qty = qty
 
     @api.depends("product_id", "product_uom_qty")
@@ -154,7 +152,7 @@ class L10nEsAeatmod592LineMixin(models.AbstractModel):
     @api.depends("error_text")
     def _compute_entries_ok(self):
         for item in self:
-            item.entries_ok = True if not item.error_text else False
+            item.entries_ok = not item.error_text
 
     @api.depends("entry_number", "product_key", "kgs", "no_recycling_kgs")
     def _compute_error_text(self):
@@ -177,7 +175,7 @@ class L10nEsAeatmod592LineMixin(models.AbstractModel):
         return {
             "entry_number": self.entry_number,
             "date_done": self.date_done.strftime("%d-%m-%Y"),
-            "concept": self.concept,
+            "concept": self.concept or "",
             "product_key": self.product_key,
             "product_description": self.product_description,
             "proof": self.proof,

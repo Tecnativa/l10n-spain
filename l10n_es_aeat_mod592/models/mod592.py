@@ -8,7 +8,7 @@ import re
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
-from odoo.fields import Domain
+from odoo.fields import Command, Domain
 
 
 class L10nEsAeatmod592Report(models.Model):
@@ -215,7 +215,7 @@ class L10nEsAeatmod592Report(models.Model):
         # Deduction by: Scrap
         # TODO: No scrap if quant is not intracomunitaty acquisition
         domain_concept_3 = [
-            ("scrap_id", "!=", False),
+            ("is_scrap", "=", True),
         ]
         # Deduction by adquisition returns
         domain_concept_4 = [
@@ -267,7 +267,7 @@ class L10nEsAeatmod592Report(models.Model):
         # # ]
         # # Return products for destruction, or re-manufacturation
         # domain_concept_3 = [
-        #     ("scrap_id", "!=", False),
+        #     ("is_scrap", "=", True),
         # ]
         # # Sales to non spanish customers
         # domain_concept_4 = [
@@ -276,7 +276,7 @@ class L10nEsAeatmod592Report(models.Model):
         # ]
         # # ? Another destructions
         # # domain_concept_5 = [
-        # #     ("scrap_id", "!=", False),
+        # #     ("is_scrap", "=", True),
         # # ]
         # # domain = Domain.AND([
         # #     domain_base, Domain.OR([
@@ -302,33 +302,29 @@ class L10nEsAeatmod592Report(models.Model):
         """Computes the records in report."""
         res = super().calculate()
         for item in self:
-            # Create acquirer_lines
             if item.company_plastic_acquirer:
-                acquirer_lines = []
-                for sm in item._get_acquirer_moves():
-                    acquirer_line = item.acquirer_line_ids.filtered(
-                        lambda x, sm=sm: x.stock_move_id == sm
-                    )
-                    acquirer_vals = {"stock_move_id": sm.id}
-                    if acquirer_line:
-                        acquirer_lines.append((1, acquirer_line.id, acquirer_vals))
-                    else:
-                        acquirer_lines.append((0, 0, acquirer_vals))
-                item.acquirer_line_ids = acquirer_lines
-            # Create manufacturer_lines
+                item.acquirer_line_ids = item._prepare_line_commands(
+                    item.acquirer_line_ids, item._get_acquirer_moves()
+                )
             if item.company_plastic_manufacturer:
-                manufacturer_lines = []
-                for sm in item._get_manufacturer_moves():
-                    manufacturer_line = item.manufacturer_line_ids.filtered(
-                        lambda x, sm=sm: x.stock_move_id == sm
-                    )
-                    m_vals = {"stock_move_id": sm.id}
-                    if manufacturer_line:
-                        manufacturer_lines.append((1, manufacturer_line.id, m_vals))
-                    else:
-                        manufacturer_lines.append((0, 0, m_vals))
-                item.manufacturer_line_ids = manufacturer_lines
+                item.manufacturer_line_ids = item._prepare_line_commands(
+                    item.manufacturer_line_ids, item._get_manufacturer_moves()
+                )
         return res
+
+    @api.model
+    def _prepare_line_commands(self, lines, moves):
+        """Update the line of each move or create it when the move has none."""
+        line_by_move = {line.stock_move_id: line for line in lines}
+        commands = []
+        for move in moves:
+            vals = {"stock_move_id": move.id}
+            line = line_by_move.get(move)
+            if line:
+                commands.append(Command.update(line.id, vals))
+            else:
+                commands.append(Command.create(vals))
+        return commands
 
     def button_recover(self):
         """Clean children records in this state for allowing things like
