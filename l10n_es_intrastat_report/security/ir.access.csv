@@ -1,0 +1,2 @@
+id,name,model_id,group_id/id,operation,domain
+access_l10n_es_intrastat_code_import,l10n_es_intrastat_code_import_user,l10n.es.intrastat.code.import,account.group_account_user,crud,

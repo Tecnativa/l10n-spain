@@ -1,8 +1,8 @@
 # Copyright 2021 Tecnativa - João Marques
 # Copyright 2023 Tecnativa - Víctor Martínez
 
-from datetime import datetime
 
+from odoo import fields
 from odoo.tests import Form, tagged
 from odoo.tools import mute_logger
 
@@ -31,11 +31,11 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
                 partner_shipping if partner_shipping else partner
             )
         move_form.fiscal_position_id = fiscal_pos
-        move_form.invoice_date = datetime.today()
+        move_form.invoice_date = fields.Date.today()
         with move_form.invoice_line_ids.new() as line_form:
+            line_form.product_id = product
             line_form.name = "test"
             line_form.account_id = account
-            line_form.product_id = product
             line_form.quantity = 1.0
             line_form.price_unit = 100
         inv = move_form.save()
@@ -46,8 +46,8 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
     def _create_declaration(cls, declaration_type):
         return cls.env["intrastat.product.declaration"].create(
             {
-                "year": datetime.today().year,
-                "month": str(datetime.today().month).zfill(2),
+                "year": fields.Date.today().year,
+                "month": str(fields.Date.today().month).zfill(2),
                 "declaration_type": declaration_type,
                 "action": "replace",
             }

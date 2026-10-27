@@ -5,7 +5,7 @@
 
 import openpyxl
 
-from odoo import exceptions, models, tools
+from odoo import exceptions, models
 from odoo.tools.misc import file_path
 
 UOM_MAPPING = {
@@ -24,16 +24,22 @@ class L10nEsPartnerImportWizard(models.TransientModel):
     _name = "l10n.es.intrastat.code.import"
     _description = "Intrastat HS Code Import for Spain"
 
-    @tools.ormcache("name")
-    def _get_intrastat_unit(self, name):
-        return self.env["intrastat.unit"].search([("name", "=", name)]).id
+    def _get_intrastat_unit_id(self, name, unit_ids):
+        """Intrastat unit of a name of the file, searched once per name"""
+        if name not in unit_ids:
+            if name in UOM_MAPPING:
+                unit = self.env.ref(f"intrastat_product.{UOM_MAPPING[name]}")
+            else:
+                unit = self.env["intrastat.unit"].search([("name", "=", name)])
+            unit_ids[name] = unit.id
+        return unit_ids[name]
 
     def _import_hs_codes(self):
         code_obj = self.env["hs.code"].with_context(active_test=False)
         path = file_path("l10n_es_intrastat_report/data/Estruc_NC2023.xlsx")
         workbook = openpyxl.load_workbook(path, data_only=True)
         sheet = workbook.worksheets[0]
-        vals_list = []
+        rows = []
         parents = []
         prev_level = 0
         for nrow in range(2, sheet.max_row + 1):
@@ -49,26 +55,29 @@ class L10nEsPartnerImportWizard(models.TransientModel):
             prev_level = level
             if len(code) != 8:  # bypass parent lines
                 continue
-            vals = {
-                "local_code": code,
-                "description": " /".join(parents + [description]),
-            }
-            if not code_obj.search([("local_code", "=", code)]):
-                iu = sheet.cell(row=nrow, column=6).value.replace("\xa0", " ")
-                if iu and iu != "-":  # specific unit
-                    if iu in UOM_MAPPING:
-                        iu_unit_id = self.env.ref(
-                            f"intrastat_product.{UOM_MAPPING[iu]}"
-                        ).id
-                    else:
-                        iu_unit_id = self._get_intrastat_unit(iu)
-                    if iu_unit_id:
-                        vals["intrastat_unit_id"] = iu_unit_id
-                    else:
-                        raise exceptions.UserError(
-                            self.env._("Unit not found: '%s'", iu)
-                        )
-                vals_list.append(vals)
+            rows.append((nrow, code, " /".join(parents + [description])))
+        # One read of the existing codes instead of a search per code
+        existing_codes = set(
+            code_obj.search_fetch(
+                [("local_code", "in", [code for _nrow, code, _desc in rows])],
+                ["local_code"],
+            ).mapped("local_code")
+        )
+        unit_ids = {}
+        vals_list = []
+        for nrow, code, description in rows:
+            if code in existing_codes:
+                continue
+            existing_codes.add(code)
+            vals = {"local_code": code, "description": description}
+            iu = sheet.cell(row=nrow, column=6).value.replace("\xa0", " ")
+            if iu and iu != "-":  # specific unit
+                iu_unit_id = self._get_intrastat_unit_id(iu, unit_ids)
+                if iu_unit_id:
+                    vals["intrastat_unit_id"] = iu_unit_id
+                else:
+                    raise exceptions.UserError(self.env._("Unit not found: '%s'", iu))
+            vals_list.append(vals)
         if vals_list:
             code_obj.create(vals_list)
 

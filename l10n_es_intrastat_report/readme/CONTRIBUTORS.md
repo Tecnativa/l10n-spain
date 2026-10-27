@@ -7,6 +7,7 @@
   - João Marques
   - Víctor Martínez
   - Juan Carlos Oñate
+  - Carlos Dauden
 - [Sygel](https://www.sygel.es):
   - Harald Panten
   - Valentin Vinagre

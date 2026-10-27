@@ -23,9 +23,8 @@ class IntrastatProductDeclaration(models.Model):
         intrastat_state = False
         inv_type = inv_line.move_id.move_type
         if inv_type in ("in_invoice", "in_refund"):
-            intrastat_state = inv_line.purchase_line_id.move_ids[
-                :1
-            ].location_dest_id._get_intrastat_state()
+            location = inv_line.purchase_line_id.move_ids[:1].location_dest_id
+            intrastat_state = location.intrastat_state_id
         elif inv_type in ("out_invoice", "out_refund"):
             so = inv_line.sale_line_ids[:1].order_id
             intrastat_state = so.warehouse_id.partner_id.state_id
@@ -76,12 +75,16 @@ class IntrastatProductDeclaration(models.Model):
         domain = super()._prepare_invoice_domain()
         if self.company_id.country_id.code != "ES":
             return domain
-        conditions = list(domain.iter_conditions())[:-1]
-        domain = Domain.AND(conditions)
+        # Replace the move types of the base domain
+        domain = Domain.AND(
+            condition
+            for condition in domain.iter_conditions()
+            if condition.field_expr != "move_type"
+        )
         if self.declaration_type == "arrivals":
-            domain += Domain("move_type", "in", ("in_invoice", "out_refund"))
+            domain &= Domain("move_type", "in", ("in_invoice", "out_refund"))
         elif self.declaration_type == "dispatches":
-            domain += Domain("move_type", "in", ("out_invoice", "in_refund"))
+            domain &= Domain("move_type", "in", ("out_invoice", "in_refund"))
         return domain
 
     def _generate_xml(self):
@@ -199,9 +202,7 @@ class IntrastatProductComputationLine(models.Model):
     _inherit = "intrastat.product.computation.line"
     _description = "Intrastat Product Computation Line for Spain"
 
-    intrastat_state_id = fields.Many2one(
-        comodel_name="res.country.state", string="Intrastat State"
-    )
+    intrastat_state_id = fields.Many2one(comodel_name="res.country.state")
     partner_vat = fields.Char(string="Customer VAT")
 
     def _prepare_grouped_fields(self, fields_to_sum):
@@ -247,7 +248,5 @@ class IntrastatProductDeclarationLine(models.Model):
     _inherit = "intrastat.product.declaration.line"
     _description = "Intrastat Product Declaration Line for Spain"
 
-    intrastat_state_id = fields.Many2one(
-        comodel_name="res.country.state", string="Intrastat State"
-    )
+    intrastat_state_id = fields.Many2one(comodel_name="res.country.state")
     partner_vat = fields.Char(string="Customer VAT")
