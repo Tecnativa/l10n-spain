@@ -1,0 +1,4 @@
+odoo-addon-report-xlsx-helper @ git+https://github.com/OCA/reporting-engine.git@refs/pull/1214/head#subdirectory=report_xlsx_helper
+odoo-addon-account-asset-management @ git+https://github.com/OCA/account-financial-tools.git@refs/pull/2408/head#subdirectory=account_asset_management
+odoo-addon-account-tax-balance @ git+https://github.com/OCA/account-financial-reporting.git@refs/pull/1586/head#subdirectory=account_tax_balance
+odoo-addon-l10n-es-aeat @ git+https://github.com/OCA/l10n-spain.git@refs/pull/5344/head#subdirectory=l10n_es_aeat
