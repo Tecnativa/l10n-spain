@@ -1,6 +1,8 @@
 # Copyright 2019 Tecnativa - Pedro M. Baeza
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from typing import ClassVar
+
 from odoo import exceptions
 from odoo.tests import Form
 
@@ -345,3 +347,51 @@ class TestL10nEsAeatMod347(TestL10nEsAeatModBase):
         )
         composer._action_send_mail()
         self.assertEqual(partner_record.state, "sent")
+
+
+class TestL10nEsAeatMod347CoreTaxes(TestL10nEsAeatModBase):
+    """Taxes of the Odoo core chart that the model did not include before."""
+
+    taxes_sale: ClassVar[dict] = {
+        "S_IVA5B": (3000, 150),
+        "S_IVA0B": (1000, 0),
+    }
+    taxes_purchase: ClassVar[dict] = {
+        "P_IVA5_BI": (3200, 160),
+    }
+
+    def test_model_347_core_taxes(self):
+        for partner in self.customer | self.supplier:
+            partner.with_context(no_vat_validation=True).write(
+                {
+                    "state_id": self.env.ref("base.state_es_m").id,
+                    "country_id": self.env.ref("base.es").id,
+                    "vat": "12345678Z" if partner == self.customer else "87654321Z",
+                }
+            )
+        self._invoice_sale_create("2024-02-01")
+        self._invoice_purchase_create("2024-02-01")
+        model347 = self.env["l10n.es.aeat.mod347.report"].create(
+            {
+                "name": "9990000001347",
+                "company_id": self.company.id,
+                "company_vat": "123456789",
+                "contact_name": "Test owner",
+                "statement_type": "N",
+                "support_type": "T",
+                "contact_phone": "911234455",
+                "year": 2024,
+                "date_start": "2024-01-01",
+                "date_end": "2024-12-31",
+            }
+        )
+        model347.button_calculate()
+        for key, partner, amount in (
+            ("B", self.customer, 4150),
+            ("A", self.supplier, 3360),
+        ):
+            record = model347.partner_record_ids.filtered(
+                lambda x, partner=partner: x.partner_id == partner
+            )
+            self.assertEqual(record.operation_key, key)
+            self.assertAlmostEqual(record.amount, amount, 2)
