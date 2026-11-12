@@ -522,7 +522,7 @@ class TestL10nEsAeatMod347CoreTaxes(TestL10nEsAeatModBase):
 
 
 class TestL10nEsAeatMod347Exclusions(TestL10nEsAeatModBase):
-    """Operations that the 347 does not declare."""
+    """Operations that the 347 declares or leaves out."""
 
     def _create_report(self):
         return self.env["l10n.es.aeat.mod347.report"].create(
@@ -623,6 +623,36 @@ class TestL10nEsAeatMod347Exclusions(TestL10nEsAeatModBase):
         report.button_calculate()
         self.assertEqual(report.partner_record_ids.operation_key, "A")
         self.assertAlmostEqual(report.partner_record_ids.amount, 7000)
+
+    def test_purchase_deductible_percentage(self):
+        """A bill of 4000 + 21 % VAT with a deductible percentage of 50 % (art. 95
+        LIVA) is declared with its total, 4840: the quotas borne count whether
+        they are deductible or not (RGAT art. 34.2.a).
+        """
+        supplier = self._partner("Supplier mixed use", "87654321X")
+        bill_form = Form(
+            self.env["account.move"]
+            .with_user(self.billing_user)
+            .with_context(default_move_type="in_invoice")
+        )
+        bill_form.partner_id = supplier
+        bill_form.invoice_date = "2024-03-01"
+        bill_form.journal_id = self.journal_purchase
+        with bill_form.invoice_line_ids.new() as line_form:
+            line_form.name = "Mixed use car"
+            line_form.price_unit = 4000
+            line_form.tax_ids.clear()
+            line_form.tax_ids.add(self._get_taxes("P_IVA21_BC"))
+            line_form.deductible_percentage = 0.5
+        bill = bill_form.save()
+        bill.action_post()
+        report = self._create_report()
+        report.button_calculate()
+        record = report.partner_record_ids
+        self.assertEqual(record.operation_key, "A")
+        self.assertAlmostEqual(record.amount, 4840, 2)
+        self.assertEqual(record.move_record_ids.move_id, bill)
+        self.assertAlmostEqual(record.move_record_ids.amount, 4840, 2)
 
     def test_sale_s_iva_e(self):
         """Sales with s_iva_e are declared in key B, as in 18.0 and 19.0."""
