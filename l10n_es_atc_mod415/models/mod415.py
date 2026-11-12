@@ -212,6 +212,14 @@ class L10nEsAtcMod415PartnerRecord(models.Model):
     def button_print(self):
         return self.env.ref("l10n_es_atc_mod415.415_partner").report_action(self)
 
+    def get_confirm_url(self):
+        self.ensure_one()
+        return self._notify_get_action_link("controller", controller="/mod415/accept")
+
+    def get_reject_url(self):
+        self.ensure_one()
+        return self._notify_get_action_link("controller", controller="/mod415/reject")
+
     def button_recompute(self):
         """Recompute with the tax map of the 415: the method of the 347 uses
         its own IVA map."""
