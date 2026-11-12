@@ -389,3 +389,23 @@ class TestL10nEsAeatMod592(TestL10nEsAeatModBase):
                 "",
             ],
         )
+
+    @freeze_time("2024-01-01", tick=True)
+    def test_recalculate_removes_lines(self):
+        """The line of a move that doesn't belong to the report anymore is
+        removed when recalculating, and the other ones keep their number"""
+        self.customer.write(
+            {"country_id": self.env.ref("base.de").id, "vat": "DE123456788"}
+        )
+        self.picking.action_confirm()
+        self.picking.button_validate()
+        self.model592.calculate()
+        self.assertEqual(
+            self.model592.acquirer_line_ids.mapped("entry_number"), ["A001", "A002"]
+        )
+        self.product_b.is_plastic_tax = False
+        self.model592.button_recalculate()
+        line = self.model592.acquirer_line_ids
+        self.assertEqual(line.product_id, self.product_a)
+        self.assertEqual(line.entry_number, "A001")
+        self.assertEqual(self.model592.total_weight_acquirer, 30)

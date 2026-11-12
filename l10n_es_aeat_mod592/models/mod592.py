@@ -314,9 +314,12 @@ class L10nEsAeatmod592Report(models.Model):
 
     @api.model
     def _prepare_line_commands(self, lines, moves):
-        """Update the line of each move or create it when the move has none."""
+        """Update the line of each move or create it when the move has none, and
+        remove the lines of the moves that don't belong to the report anymore."""
         line_by_move = {line.stock_move_id: line for line in lines}
-        commands = []
+        commands = [
+            Command.delete(line.id) for line in lines if line.stock_move_id not in moves
+        ]
         for move in moves:
             vals = {"stock_move_id": move.id}
             line = line_by_move.get(move)
