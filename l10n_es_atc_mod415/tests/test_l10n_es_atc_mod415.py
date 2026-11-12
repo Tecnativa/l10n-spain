@@ -10,6 +10,7 @@
 import logging
 from unittest.mock import patch
 
+from odoo.fields import Command
 from odoo.tests import Form, tagged
 
 from odoo.addons.l10n_es_aeat.tests.test_l10n_es_aeat_mod_base import (
@@ -258,3 +259,65 @@ class TestL10nEsAtcMod415(TestL10nEsAeatModBase):
             )
             self.assertEqual(record.operation_key, key, partner.name)
             self.assertAlmostEqual(record.amount, amount, 2, partner.name)
+
+    def test_model_415_cash_of_another_company(self):
+        """With several companies active, the cash collected by another
+        company is not declared in the 415 of this one."""
+        other_company = (
+            self.env["res.company"]
+            .sudo()
+            .create(
+                {"name": "Other company", "currency_id": self.env.ref("base.EUR").id}
+            )
+        )
+        self.env["account.chart.template"].sudo()._load(
+            template_code="es_pymes", company=other_company, install_demo=False
+        )
+        self.env.user.sudo().company_ids = [Command.link(other_company.id)]
+        env = self.env(
+            context=dict(
+                self.env.context,
+                allowed_company_ids=[self.company.id, other_company.id],
+            )
+        )
+        partner = env["res.partner"].create({"name": "Customer of the other company"})
+        invoice = (
+            env["account.move"]
+            .with_company(other_company)
+            .create(
+                {
+                    "move_type": "out_invoice",
+                    "partner_id": partner.id,
+                    "invoice_date": "2019-03-01",
+                    "invoice_line_ids": [
+                        Command.create(
+                            {"name": "Sale", "price_unit": 7000, "tax_ids": []}
+                        )
+                    ],
+                }
+            )
+        )
+        invoice.action_post()
+        payment_form = Form(
+            env["account.payment.register"]
+            .with_company(other_company)
+            .with_context(active_model="account.move", active_ids=invoice.ids)
+        )
+        # The charts of 20.0 do not create a cash journal
+        payment_form.journal_id = (
+            env["account.journal"]
+            .with_company(other_company)
+            .create({"name": "Cash", "code": "CSHO", "type": "cash"})
+        )
+        payment_form.payment_date = "2019-03-01"
+        payment_form.save().action_create_payments()
+        self.model415.with_env(env).button_calculate()
+        self.assertFalse(
+            self.model415.partner_record_ids.filtered(lambda x: x.partner_id == partner)
+        )
+        # The cash of this company is still declared
+        self.assertTrue(
+            self.model415.partner_record_ids.filtered(
+                lambda x: x.partner_id == self.customer_5
+            ).cash_amount
+        )
