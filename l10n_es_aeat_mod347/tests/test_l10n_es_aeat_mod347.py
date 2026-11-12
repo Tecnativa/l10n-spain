@@ -216,52 +216,49 @@ class TestL10nEsAeatMod347(TestL10nEsAeatModBase):
             export_config = self.env.ref(xml_id)
             self.assertTrue(export_to_boe._export_config(self.model347, export_config))
 
+    def _partner_record(self, partner, report=None):
+        return (report or self.model347).partner_record_ids.filtered(
+            lambda x: x.partner_id == partner
+        )
+
     def test_partner_record_ids_states(self):
         self.model347.button_calculate()
-        first_partner_mod347_record = self.model347.partner_record_ids[0]
-        first_partner = first_partner_mod347_record.partner_id
-        self.assertFalse(first_partner.email)
-        second_partner_mod347_record = self.model347.partner_record_ids[1]
-        second_partner = second_partner_mod347_record.partner_id
-        second_partner.email = "test@email.com"
+        record_no_email = self._partner_record(self.supplier)
+        self.assertFalse(self.supplier.email)
+        record_email = self._partner_record(self.customer_2)
+        self.customer_2.email = "test@email.com"
         self.model347.button_send_mails()
-        self.assertTrue(first_partner_mod347_record.state, "pending")
-        self.assertTrue(second_partner_mod347_record.state, "sent")
+        self.assertEqual(record_no_email.state, "pending")
+        self.assertEqual(record_email.state, "sent")
         self.model347.button_send_mails()
-        self.assertTrue(first_partner_mod347_record.state, "pending")
-        first_partner.email = "test1@email.com"
+        self.assertEqual(record_no_email.state, "pending")
+        self.supplier.email = "test1@email.com"
         self.model347.button_send_mails()
-        self.assertTrue(first_partner_mod347_record.state, "sent")
+        self.assertEqual(record_no_email.state, "sent")
 
     def test_mod347_unit_report(self):
-        # Test _error_count and _compute_error_count
         self.model347.button_calculate()
-        # Mock an error in a partner record
-        partner_record = self.model347.partner_record_ids[0]
-        # Ensure it was OK before
-        partner_record._compute_check_ok()
+        partner_record = self._partner_record(self.customer_2)
         self.assertTrue(partner_record.check_ok, partner_record.error_text)
-        partner_record.partner_state_code = "AA"  # Invalid, must be digits
-        partner_record._compute_check_ok()
+        self.assertEqual(self.model347.error_count, 0)
+        # The user writes a wrong state code (it must be digits)
+        with Form(partner_record) as record_form:
+            record_form.partner_state_code = "AA"
         self.assertFalse(partner_record.check_ok)
-        errors = self.model347._error_count("partner_record")
-        self.assertEqual(errors.get(self.model347.id), 1)
-        # Test _compute_error_count
-        self.model347._compute_error_count()
-        # It adds to existing error_count (if any)
-        self.assertGreaterEqual(self.model347.error_count, 1)
-        # Test button_confirm with errors
+        # The declaration is read again, as the screen does
+        self.env.invalidate_all()
+        self.assertEqual(self.model347.error_count, 1)
         with self.assertRaises(exceptions.ValidationError):
             self.model347.button_confirm()
-        # Fix error and test button_confirm
-        partner_record.partner_state_code = "28"
-        partner_record._compute_check_ok()
+        with Form(partner_record) as record_form:
+            record_form.partner_state_code = "28"
+        self.assertTrue(partner_record.check_ok)
         self.model347.button_confirm()
         self.assertEqual(self.model347.state, "done")
 
     def test_mod347_unit_partner_record(self):
         self.model347.button_calculate()
-        partner_record = self.model347.partner_record_ids[0]
+        partner_record = self._partner_record(self.supplier)
         # Test action_exception, action_confirm, action_pending
         partner_record.action_exception()
         self.assertEqual(partner_record.state, "exception")
@@ -272,44 +269,83 @@ class TestL10nEsAeatMod347(TestL10nEsAeatModBase):
         # Test action_send
         res = partner_record.action_send()
         self.assertEqual(res["res_model"], "mail.compose.message")
-        # Test message_get_suggested_recipients
+        # The invoice address of the partner is suggested as recipient
+        invoice_contact = (
+            self.env["res.partner"]
+            .with_context(no_vat_validation=True)
+            .create(
+                {
+                    "name": "Supplier invoicing",
+                    "type": "invoice",
+                    "parent_id": self.supplier.id,
+                    "email": "invoicing@supplier.example.com",
+                }
+            )
+        )
         recipients = partner_record._message_get_suggested_recipients()
-        self.assertTrue(
-            any(r.get("partner_id") == partner_record.partner_id.id for r in recipients)
-        )
-        # Test _onchange_partner_id
-        new_partner = self.customer_5
-        new_partner.country_id = self.env.ref("base.es")
-        partner_record.partner_id = new_partner
-        partner_record._onchange_partner_id()
-        self.assertEqual(partner_record.partner_vat, "12345678Z")
-        self.assertEqual(partner_record.partner_state_code, "28")
+        self.assertIn(invoice_contact.id, [r.get("partner_id") for r in recipients])
+        # The partner data are loaded when the user changes the partner
+        self.customer_5.country_id = self.env.ref("base.es")
+        with Form(partner_record) as record_form:
+            record_form.partner_id = self.customer_5
+            self.assertEqual(record_form.partner_vat, "12345678Z")
+            self.assertEqual(record_form.partner_state_code, "28")
         # Test button_recompute
-        old_amount = partner_record.amount
-        # Force a change in underlying data to see recompute
-        # Creating a new invoice for this partner
-        self._invoice_purchase_create(
-            "2019-01-01", {"partner_id": partner_record.partner_id.id}
-        )
+        partner_record.partner_id = self.supplier
         partner_record.button_recompute()
-        self.assertNotEqual(partner_record.amount, old_amount)
+        self.assertAlmostEqual(partner_record.amount, 3300)
+        self._invoice_purchase_create("2019-01-01")
+        partner_record.button_recompute()
+        self.assertAlmostEqual(partner_record.amount, 7700)
 
     def test_mod347_unit_real_estate_record(self):
-        # Test _onchange_partner_id and _compute_check_ok
         self.customer_5.state_id = self.state_es_m
-        real_estate = self.env["l10n.es.aeat.mod347.real_estate_record"].create(
-            {
-                "report_id": self.model347.id,
-                "partner_id": self.customer_5.id,
-                "situation": "1",
-            }
+        real_estate_form = Form(
+            self.env["l10n.es.aeat.mod347.real_estate_record"].with_context(
+                default_report_id=self.model347.id
+            )
         )
-        real_estate._onchange_partner_id()
-        self.assertEqual(real_estate.partner_vat, "12345678Z")
-        self.assertEqual(real_estate.state_code, "28")
+        real_estate_form.partner_id = self.customer_5
+        real_estate_form.situation = "1"
+        self.assertEqual(real_estate_form.partner_vat, "12345678Z")
+        self.assertEqual(real_estate_form.state_code, "28")
+        real_estate = real_estate_form.save()
+        self.assertTrue(real_estate.check_ok)
         real_estate.state_code = False
-        real_estate._compute_check_ok()
         self.assertFalse(real_estate.check_ok)
+
+    def test_mod347_real_estate_record_foreign_partner(self):
+        foreign_partner = (
+            self.env["res.partner"]
+            .with_context(no_vat_validation=True)
+            .create(
+                {
+                    "name": "Foreign landlord",
+                    "country_id": self.env.ref("base.fr").id,
+                    "vat": "FR23334175221",
+                }
+            )
+        )
+        real_estate_form = Form(
+            self.env["l10n.es.aeat.mod347.real_estate_record"].with_context(
+                default_report_id=self.model347.id
+            )
+        )
+        with self.assertRaises(exceptions.ValidationError):
+            real_estate_form.partner_id = foreign_partner
+
+    def test_mod347_partner_record_from_list(self):
+        """A record created from the "Partner records" button belongs to the
+        declaration."""
+        action = self.model347.btn_list_records()
+        record_form = Form(
+            self.env[action["res_model"]].with_context(**action["context"])
+        )
+        record_form.partner_id = self.customer
+        record_form.operation_key = "B"
+        record = record_form.save()
+        self.assertEqual(record.report_id, self.model347)
+        self.assertIn(record, self.model347.partner_record_ids)
 
     def test_mod347_unit_move_record(self):
         # Test _default_partner_record
@@ -329,30 +365,20 @@ class TestL10nEsAeatMod347(TestL10nEsAeatModBase):
 
     def test_mod347_unit_wizard_send_mail(self):
         self.model347.button_calculate()
-        partner_record = self.model347.partner_record_ids[0]
+        partner_record = self._partner_record(self.customer_2)
         self.assertEqual(partner_record.state, "pending")
-        composer = (
-            self.env["mail.compose.message"]
-            .with_context(
-                default_model="l10n.es.aeat.mod347.partner_record",
+        action = partner_record.action_send()
+        composer_form = Form(
+            self.env[action["res_model"]].with_context(
                 active_id=partner_record.id,
                 active_ids=partner_record.ids,
-            )
-            .create(
-                {
-                    "subject": "Test",
-                    "body": "Test body",
-                    "composition_mode": "comment",
-                }
-            )
+                **action["context"],
+            ),
+            view=self.env["ir.ui.view"].browse(action["view_id"]),
         )
-        composer._action_send_mail()
+        composer_form.body = "Test body"
+        composer_form.save().action_send_mail()
         self.assertEqual(partner_record.state, "sent")
-
-    def _partner_record(self, partner, report=None):
-        return (report or self.model347).partner_record_ids.filtered(
-            lambda x: x.partner_id == partner
-        )
 
     def test_mod347_cash_other_company(self):
         """Cash collected by another company of the user is not declared."""
@@ -409,6 +435,43 @@ class TestL10nEsAeatMod347(TestL10nEsAeatModBase):
         self.assertAlmostEqual(partner_record.cash_amount, 0)
         self.assertAlmostEqual(self.model347.total_cash_amount, 13200)
 
+    def test_mod347_boe_export(self):
+        self.model347.button_calculate()
+        self.model347.button_confirm()
+        # "Export to BOE" button of the declaration
+        wizard = (
+            self.env["l10n.es.aeat.report.export_to_boe"]
+            .with_context(active_id=self.model347.id, active_model=self.model347._name)
+            .create({})
+        )
+        wizard.action_get_file()
+        content = (
+            self.env["ir.attachment"]
+            .search(
+                [
+                    ("res_model", "=", self.model347._name),
+                    ("res_id", "=", self.model347.id),
+                ]
+            )
+            .raw.decode("iso-8859-1")
+        )
+        records = [content[i : i + 500] for i in range(0, len(content), 500)]
+        self.assertEqual(records[0][:4], "1347")
+        partner_records = [r for r in records[1:] if r[0] == "2"]
+        self.assertEqual(len(partner_records), 6)
+        # Positions 18-26 partner NIF, 82 operation key, 83-98 annual amount
+        record = next(
+            r for r in partner_records if r[35:75].upper().startswith("TEST CUSTOMER 2")
+        )
+        self.assertEqual(record[1:8], "3472019")
+        self.assertEqual(record[17:26], "12345678Z")
+        self.assertEqual(record[81], "B")
+        self.assertEqual(record[82:98], " 000000000440000")
+        record = next(
+            r for r in partner_records if r[35:75].upper().startswith("TEST CUSTOMER 6")
+        )
+        self.assertEqual(record[82:98], "N000000000550000")
+
 
 class TestL10nEsAeatMod347CoreTaxes(TestL10nEsAeatModBase):
     """Taxes of the Odoo core chart that the model did not include before."""
@@ -456,3 +519,109 @@ class TestL10nEsAeatMod347CoreTaxes(TestL10nEsAeatModBase):
             )
             self.assertEqual(record.operation_key, key)
             self.assertAlmostEqual(record.amount, amount, 2)
+
+
+class TestL10nEsAeatMod347Exclusions(TestL10nEsAeatModBase):
+    """Operations that the 347 does not declare."""
+
+    def _create_report(self):
+        return self.env["l10n.es.aeat.mod347.report"].create(
+            {
+                "name": "9990000002347",
+                "company_id": self.company.id,
+                "company_vat": "123456789",
+                "contact_name": "Test owner",
+                "statement_type": "N",
+                "support_type": "T",
+                "contact_phone": "911234455",
+                "year": 2024,
+                "date_start": "2024-01-01",
+                "date_end": "2024-12-31",
+            }
+        )
+
+    def _partner(self, name, vat):
+        return (
+            self.env["res.partner"]
+            .with_context(no_vat_validation=True)
+            .create(
+                {
+                    "name": name,
+                    "state_id": self.env.ref("base.state_es_m").id,
+                    "country_id": self.env.ref("base.es").id,
+                    "vat": vat,
+                    "property_account_payable_id": self.accounts["410000"].id,
+                    "property_account_receivable_id": self.accounts["430000"].id,
+                }
+            )
+        )
+
+    def _invoice(self, move_type, partner, tax_code, amount):
+        account = self.accounts["700000" if move_type == "out_invoice" else "600000"]
+        journal = (
+            self.journal_sale if move_type == "out_invoice" else self.journal_purchase
+        )
+        move = (
+            self.env["account.move"]
+            .with_user(self.billing_user)
+            .create(
+                {
+                    "company_id": self.company.id,
+                    "move_type": move_type,
+                    "partner_id": partner.id,
+                    "journal_id": journal.id,
+                    "invoice_date": "2024-03-01",
+                    "invoice_line_ids": [
+                        Command.create(
+                            {
+                                "name": tax_code,
+                                "account_id": account.id,
+                                "price_unit": amount,
+                                "tax_ids": [Command.set(self._get_taxes(tax_code).ids)],
+                            }
+                        )
+                    ],
+                }
+            )
+        )
+        move.action_post()
+        return move
+
+    def test_map_lines_match_company_taxes(self):
+        """Every tax of the keys exists in the Odoo core chart, and no key adds
+        withholdings, imports (DUA) or not subject purchases."""
+        for key, xmlid in (
+            ("A", "l10n_es_aeat_mod347.aeat_mod347_map_a"),
+            ("B", "l10n_es_aeat_mod347.aeat_mod347_map_b"),
+        ):
+            map_line = self.env.ref(xmlid)
+            taxes = map_line.get_taxes_for_company(self.company)
+            self.assertEqual(len(taxes), len(map_line.tax_xmlid_ids), key)
+            excluded = {"dua", "retencion"}
+            if key == "A":
+                excluded |= {"no_sujeto", "no_sujeto_loc"}
+            self.assertFalse(
+                taxes.filtered(lambda t, excluded=excluded: t.l10n_es_type in excluded),
+                key,
+            )
+
+    def test_excluded_operations(self):
+        supplier = self._partner("Supplier excluded", "87654321X")
+        customer = self._partner("Customer export", "12345678Z")
+        # Not subject purchases, intra-community acquisitions and imports
+        for tax_code in ("P_IVA0_NS", "P_IVA21_IC_BC", "P_IVA21_IBC_GROUP"):
+            self._invoice("in_invoice", supplier, tax_code, 7000)
+        # Exports
+        self._invoice("out_invoice", customer, "S_IVA0_G_E", 7000)
+        report = self._create_report()
+        report.button_calculate()
+        self.assertFalse(report.partner_record_ids)
+
+    def test_sale_s_iva_e(self):
+        """Sales with s_iva_e are declared in key B, as in 18.0 and 19.0."""
+        customer = self._partner("Customer s_iva_e", "12345678Z")
+        self._invoice("out_invoice", customer, "S_IVA_E", 7000)
+        report = self._create_report()
+        report.button_calculate()
+        self.assertEqual(report.partner_record_ids.operation_key, "B")
+        self.assertAlmostEqual(report.partner_record_ids.amount, 7000)
