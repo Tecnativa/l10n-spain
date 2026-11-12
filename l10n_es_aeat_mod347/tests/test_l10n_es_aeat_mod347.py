@@ -589,7 +589,7 @@ class TestL10nEsAeatMod347Exclusions(TestL10nEsAeatModBase):
 
     def test_map_lines_match_company_taxes(self):
         """Every tax of the keys exists in the Odoo core chart, and no key adds
-        withholdings, imports (DUA) or not subject purchases."""
+        withholdings or imports (DUA)."""
         for key, xmlid in (
             ("A", "l10n_es_aeat_mod347.aeat_mod347_map_a"),
             ("B", "l10n_es_aeat_mod347.aeat_mod347_map_b"),
@@ -597,25 +597,32 @@ class TestL10nEsAeatMod347Exclusions(TestL10nEsAeatModBase):
             map_line = self.env.ref(xmlid)
             taxes = map_line.get_taxes_for_company(self.company)
             self.assertEqual(len(taxes), len(map_line.tax_xmlid_ids), key)
-            excluded = {"dua", "retencion"}
-            if key == "A":
-                excluded |= {"no_sujeto", "no_sujeto_loc"}
             self.assertFalse(
-                taxes.filtered(lambda t, excluded=excluded: t.l10n_es_type in excluded),
+                taxes.filtered(lambda t: t.l10n_es_type in {"dua", "retencion"}),
                 key,
             )
 
     def test_excluded_operations(self):
         supplier = self._partner("Supplier excluded", "87654321X")
         customer = self._partner("Customer export", "12345678Z")
-        # Not subject purchases, intra-community acquisitions and imports
-        for tax_code in ("P_IVA0_NS", "P_IVA21_IC_BC", "P_IVA21_IBC_GROUP"):
+        # Intra-community acquisitions and imports
+        for tax_code in ("P_IVA21_IC_BC", "P_IVA21_IBC_GROUP"):
             self._invoice("in_invoice", supplier, tax_code, 7000)
         # Exports
         self._invoice("out_invoice", customer, "S_IVA0_G_E", 7000)
         report = self._create_report()
         report.button_calculate()
         self.assertFalse(report.partner_record_ids)
+
+    def test_purchase_not_subject(self):
+        """Not subject purchases are declared in key A (RGAT art. 33.1)."""
+        supplier = self._partner("Supplier not subject", "87654321X")
+        self._invoice("in_invoice", supplier, "P_IVA0_NS", 4000)
+        self._invoice("in_invoice", supplier, "P_IVA0_NS_B", 3000)
+        report = self._create_report()
+        report.button_calculate()
+        self.assertEqual(report.partner_record_ids.operation_key, "A")
+        self.assertAlmostEqual(report.partner_record_ids.amount, 7000)
 
     def test_sale_s_iva_e(self):
         """Sales with s_iva_e are declared in key B, as in 18.0 and 19.0."""
