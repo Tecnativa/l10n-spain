@@ -97,10 +97,10 @@ class TestL10nEsIntrastatAeatFile(AccountTestInvoicingCommon):
             }
         )
 
-    def _deliver_and_invoice(self, partner, qty, price):
+    def _deliver_and_invoice(self, partner, qty, price, warehouse=None):
         order_form = Form(self.env["sale.order"])
         order_form.partner_id = partner
-        order_form.warehouse_id = self.warehouse
+        order_form.warehouse_id = warehouse or self.warehouse
         with order_form.order_line.new() as line_form:
             line_form.product_id = self.product
             line_form.product_uom_qty = qty
@@ -127,6 +127,18 @@ class TestL10nEsIntrastatAeatFile(AccountTestInvoicingCommon):
         bill.invoice_date = bill.date = "2025-03-20"
         bill.action_post()
         return bill
+
+    def _refund(self, move):
+        """Credit note of the whole invoice from its "Credit Note" button"""
+        action = move.action_reverse()
+        reversal = Form(
+            self.env[action["res_model"]].with_context(
+                active_model=move._name, active_ids=move.ids
+            )
+        ).save()
+        refund = self.env["account.move"].browse(reversal.refund_moves()["res_id"])
+        refund.action_post()
+        return refund
 
     def _declaration(self, declaration_type):
         declaration = self.env["intrastat.product.declaration"].create(
@@ -167,3 +179,63 @@ class TestL10nEsIntrastatAeatFile(AccountTestInvoicingCommon):
             declaration, "xml_attachment_datas"
         )
         self.assertEqual(stream.read().decode(), expected)
+
+    @freeze_time("2025-03-20")
+    def test_dispatches_province_of_the_warehouse(self):
+        """Goods sent from the Madrid warehouse are declared in Madrid"""
+        self._deliver_and_invoice(
+            self.customer_fr, 4, 10, warehouse=self.warehouse_madrid
+        )
+        declaration = self._declaration("dispatches")
+        self.assertEqual(
+            declaration._generate_csv().decode(),
+            "FR;28;FCA;11;3;;61091000;PT;;1,00;4;40,00;40,00;FR86792377731;\n",
+        )
+
+    @freeze_time("2025-03-20")
+    def test_refunds(self):
+        """The credit note of a sale declares the goods coming back as an
+        arrival, and the one of a purchase the goods sent back as a dispatch,
+        both with a positive value and in the province of the warehouse."""
+        self._refund(self._deliver_and_invoice(self.customer_fr, 4, 10))
+        self._refund(self._receive_and_bill(self.supplier_de, 2, 20))
+        expected = {
+            # country, province, CN8, origin, weight, units, value, stat. value
+            "arrivals": {
+                ("DE", "28", "61091000", "PT", "0,50", "2", "40,00", "40,00"),
+                ("FR", "03", "61091000", "PT", "1,00", "4", "40,00", "40,00"),
+            },
+            "dispatches": {
+                ("DE", "28", "61091000", "PT", "0,50", "2", "40,00", "40,00"),
+                ("FR", "03", "61091000", "PT", "1,00", "4", "40,00", "40,00"),
+            },
+        }
+        for declaration_type, expected_lines in expected.items():
+            csv_lines = (
+                self._declaration(declaration_type)
+                ._generate_csv()
+                .decode()
+                .splitlines()
+            )
+            self.assertEqual(
+                {
+                    tuple(line.split(";")[i] for i in (0, 1, 6, 7, 9, 10, 11, 12))
+                    for line in csv_lines
+                },
+                expected_lines,
+            )
+
+    def test_import_hs_codes_twice(self):
+        """Importing the codes again neither duplicates them nor loses their
+        supplementary unit"""
+        hs_code_model = self.env["hs.code"].with_context(active_test=False)
+        count = hs_code_model.search_count([])
+        self.env["l10n.es.intrastat.code.import"].create({}).action_import_hs_codes()
+        self.assertEqual(hs_code_model.search_count([]), count)
+        self.assertEqual(
+            self.hs_code.intrastat_unit_id,
+            self.env.ref("intrastat_product.intrastat_unit_pce"),
+        )
+        wine = hs_code_model.search([("local_code", "=", "22042109")])
+        self.assertEqual(len(wine), 1)
+        self.assertEqual(wine.intrastat_unit_id.name, "l")
