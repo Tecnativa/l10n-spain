@@ -273,7 +273,7 @@ class L10nEsAeatMod347Report(models.Model):
             ]
             if partner_record:
                 vals["move_record_ids"][0:0] = [
-                    (2, x) for x in partner_record.move_record_ids.ids
+                    Command.delete(x) for x in partner_record.move_record_ids.ids
                 ]
                 partner_record.write(vals)
             else:
@@ -353,7 +353,7 @@ class L10nEsAeatMod347Report(models.Model):
 
 class L10nEsAeatMod347PartnerRecord(models.Model):
     _name = "l10n.es.aeat.mod347.partner_record"
-    _inherit = ["mail.thread", "mail.activity.mixin", "portal.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "portal.mixin"]  # noqa: RUF012
     _description = "Partner Record"
     _rec_name = "partner_vat"
     _order = "check_ok asc,id"
