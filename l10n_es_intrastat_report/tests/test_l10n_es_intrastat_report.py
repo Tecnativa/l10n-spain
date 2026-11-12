@@ -138,66 +138,39 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
                 cls.invoices[declaration_type][partner.country_id] += 1
 
     def test_post_init_hook(self):
-        """Simulate intra community fiscal positions and other positions from l10n_es
-        and other fiscal positions created with other chart templates."""
-        fp_es_b2b = self.fiscal_position_b2b
-        fp_es_b2b.intrastat = False
-        fp_es_b2c = self.fiscal_position_b2c
-        fp_es_b2c.intrastat = False
-        fp_model = self.env["account.fiscal.position"].sudo()
-        fp_not_es_ok = fp_model.create(
-            {
-                "name": "Test FP (not es)",
-                "company_id": self.env.ref("base.main_company").id,
-            }
+        """The intra-community positions of a company whose Spanish chart was
+        installed before this module are set as Intrastat, and only those: the
+        other positions of the chart and a position with the same XML-ID in a
+        company with another chart are left as they are."""
+        chart = self.env["account.chart.template"]
+        fp_intra = chart.ref("fp_intra")
+        fp_intra_private = chart.ref("fp_intra_private")
+        fp_extra = chart.ref("fp_extra")
+        # As they were before installing this module
+        (fp_intra | fp_intra_private).write({"intrastat": "no"})
+        (fp_intra | fp_intra_private).vat_required = False
+        company_other = self.env["res.company"].create(
+            {"name": "Other chart company", "chart_template": "generic_coa"}
         )
-        fp_es_ok = fp_model.create(
-            {
-                "name": "Test FP (es)",
-                "company_id": self.env.company.id,
-            }
+        fp_other = self.env["account.fiscal.position"].create(
+            {"name": "Intra-community (other chart)", "company_id": company_other.id}
         )
         self.env["ir.model.data"].create(
             {
-                "name": f"{self.env.company}_fp_intra_private",
-                "model": fp_es_b2c._name,
+                "name": f"{company_other.id}_fp_intra",
+                "model": fp_other._name,
                 "module": "account",
-                "res_id": fp_es_b2c.id,
-            }
-        )
-        self.env["ir.model.data"].create(
-            {
-                "name": f"{self.env.company}_fp_intra",
-                "model": fp_es_b2b._name,
-                "module": "account",
-                "res_id": fp_es_b2b.id,
-            }
-        )
-        self.env["ir.model.data"].create(
-            {
-                "name": f"{fp_not_es_ok.company_id.id}_fp_custom",
-                "model": fp_not_es_ok._name,
-                "module": "account",
-                "res_id": fp_not_es_ok.id,
-            }
-        )
-        self.env["ir.model.data"].create(
-            {
-                "name": f"{self.env.company}_fp_custom",
-                "model": fp_es_ok._name,
-                "module": "account",
-                "res_id": fp_es_ok.id,
+                "res_id": fp_other.id,
             }
         )
         post_init_hook(self.env)
-        self.assertEqual(fp_es_b2b.intrastat, "b2b")
-        self.assertTrue(fp_es_b2b.vat_required)
-        self.assertEqual(fp_es_b2c.intrastat, "b2c")
-        self.assertFalse(fp_es_b2c.vat_required)
-        self.assertEqual(fp_es_ok.intrastat, "no")
-        self.assertFalse(fp_es_ok.vat_required)
-        self.assertEqual(fp_not_es_ok.intrastat, "no")
-        self.assertFalse(fp_not_es_ok.vat_required)
+        self.assertEqual(fp_intra.intrastat, "b2b")
+        self.assertTrue(fp_intra.vat_required)
+        self.assertEqual(fp_intra_private.intrastat, "b2c")
+        self.assertFalse(fp_intra_private.vat_required)
+        self.assertEqual(fp_extra.intrastat, "no")
+        self.assertEqual(fp_other.intrastat, "no")
+        self.assertFalse(fp_other.vat_required)
 
     def test_declaration_of_a_non_spanish_company(self):
         """The declaration model is shared by every localization, so the one of
