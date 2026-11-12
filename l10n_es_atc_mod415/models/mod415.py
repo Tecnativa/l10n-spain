@@ -55,8 +55,25 @@ class L10nEsAtcMod415Report(models.Model):
                 Domain("date", "<=", self.date_end),
                 Domain.OR(
                     [
-                        Domain("tax_ids", "in", taxes.ids),
+                        # The 'non_deductible_tax' line gets the taxes of its
+                        # account, not the ones of the bill lines
+                        Domain("tax_ids", "in", taxes.ids)
+                        & Domain("display_type", "!=", "non_deductible_tax"),
                         Domain("tax_line_id", "in", taxes.ids),
+                        # Private part of a bill line with a deductible
+                        # percentage: its base and its tax are amounts of the
+                        # operation too
+                        Domain(
+                            "display_type",
+                            "in",
+                            ["non_deductible_product_total", "non_deductible_tax"],
+                        )
+                        & Domain(
+                            "move_id.line_ids",
+                            "any",
+                            Domain("display_type", "=", "non_deductible_product")
+                            & Domain("tax_ids", "in", taxes.ids),
+                        ),
                     ]
                 ),
                 Domain("parent_state", "=", "posted"),

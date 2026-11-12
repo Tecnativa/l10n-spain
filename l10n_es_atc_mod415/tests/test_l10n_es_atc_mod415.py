@@ -347,6 +347,40 @@ class TestL10nEsAtcMod415(TestL10nEsAtcMod415Base):
 
 
 @tagged("post_install", "-at_install")
+class TestL10nEsAtcMod415NonDeductible(TestL10nEsAtcMod415Base):
+    def test_model_415_deductible_percentage(self):
+        """A bill of 4000 + 7 % IGIC with a deductible percentage of 50 % is
+        declared with its total, 4280: the IGIC borne counts whether it is
+        deductible or not, as in the model 347 (RGAT art. 34.2.a).
+        """
+        bill_form = Form(
+            self.env["account.move"]
+            .with_user(self.billing_user)
+            .with_context(default_move_type="in_invoice")
+        )
+        bill_form.partner_id = self.supplier
+        bill_form.invoice_date = "2019-02-01"
+        bill_form.journal_id = self.journal_purchase
+        with bill_form.invoice_line_ids.new() as line_form:
+            line_form.name = "Mixed use car"
+            line_form.price_unit = 4000
+            line_form.tax_ids.clear()
+            line_form.tax_ids.add(self._get_taxes("account_tax_template_igic_sop_7"))
+            line_form.deductible_percentage = 0.5
+        bill = bill_form.save()
+        bill.action_post()
+        model415 = self._model415_create()
+        model415.button_calculate()
+        record = model415.partner_record_ids
+        self.assertEqual(record.partner_id, self.supplier)
+        self.assertEqual(record.operation_key, "A")
+        self.assertAlmostEqual(record.amount, 4280, 2)
+        self.assertAlmostEqual(record.first_quarter, 4280, 2)
+        self.assertEqual(record.move_record_ids.move_id, bill)
+        self.assertAlmostEqual(record.move_record_ids.amount, 4280, 2)
+
+
+@tagged("post_install", "-at_install")
 class TestL10nEsAtcMod415Answer(TestL10nEsAtcMod415Base, HttpCase):
     taxes_purchase = {  # noqa: RUF012
         "account_tax_template_igic_sop_7": (4000, 280),
