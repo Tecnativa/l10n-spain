@@ -199,6 +199,30 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
         self.assertEqual(fp_not_es_ok.intrastat, "no")
         self.assertFalse(fp_not_es_ok.vat_required)
 
+    def test_declaration_of_a_non_spanish_company(self):
+        """The declaration model is shared by every localization, so the one of
+        a French company of the same database is gathered as usual."""
+        company_fr = self.env["res.company"].create(
+            {"name": "FR company", "country_id": self.env.ref("base.fr").id}
+        )
+        self.env.user.company_ids |= company_fr
+        declaration = (
+            self.env["intrastat.product.declaration"]
+            .with_company(company_fr)
+            .create(
+                {
+                    "year": str(fields.Date.today().year),
+                    "month": str(fields.Date.today().month).zfill(2),
+                    "declaration_type": "dispatches",
+                }
+            )
+        )
+        self.assertEqual(declaration.company_id, company_fr)
+        declaration.action_gather()
+        # None of the Spanish invoices belongs to it
+        self.assertFalse(declaration.computation_line_ids)
+        self.assertEqual(declaration.action, "nihil")
+
     def _check_move_lines_present(self, original, target):
         for move in original:
             for line in move.invoice_line_ids:
