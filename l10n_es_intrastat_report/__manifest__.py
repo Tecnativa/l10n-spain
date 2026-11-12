@@ -23,5 +23,6 @@
         "security/ir.access.csv",
     ],
     "post_init_hook": "post_init_hook",
+    "maintainers": ["carlosdauden"],
     "installable": True,
 }
