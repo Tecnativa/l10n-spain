@@ -26,6 +26,6 @@
         "report/report_views.xml",
     ],
     "development_status": "Production/Stable",
-    "maintainers": ["victoralmau"],
+    "maintainers": ["victoralmau", "carlosdauden"],
     "installable": True,
 }
