@@ -321,3 +321,19 @@ class TestL10nEsAtcMod415(TestL10nEsAeatModBase):
                 lambda x: x.partner_id == self.customer_5
             ).cash_amount
         )
+
+    def test_model_415_recompute_a_partner(self):
+        """A bill entered after the calculation reaches the partner record when
+        the user presses Recompute on it, and the record has to be sent again."""
+        self.model415.button_calculate()
+        record = self.model415.partner_record_ids.filtered(
+            lambda x: x.partner_id == self.supplier
+        )
+        record.action_confirm()
+        self.assertAlmostEqual(record.amount, 3210)
+        # A bill of 4000 + 7 % IGIC
+        self._invoice_purchase_create("2019-10-01")
+        record.button_recompute()
+        self.assertAlmostEqual(record.amount, 3210 + 4280)
+        self.assertAlmostEqual(record.fourth_quarter, 4280)
+        self.assertEqual(record.state, "pending")

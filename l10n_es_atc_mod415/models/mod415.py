@@ -4,6 +4,7 @@
 
 from odoo import api, fields, models
 from odoo.fields import Command, Domain
+from odoo.tools import float_compare
 
 KEY_TAX_MAPPING = {
     "A": "l10n_es_atc_mod415.atc_mod415_map_a",
@@ -210,6 +211,22 @@ class L10nEsAtcMod415PartnerRecord(models.Model):
 
     def button_print(self):
         return self.env.ref("l10n_es_atc_mod415.415_partner").report_action(self)
+
+    def button_recompute(self):
+        """Recompute with the tax map of the 415: the method of the 347 uses
+        its own IVA map."""
+        self.ensure_one()
+        if self.operation_key not in ("A", "B"):
+            return
+        prev_amount = self.amount
+        self.report_id._create_partner_records(
+            self.operation_key,
+            KEY_TAX_MAPPING[self.operation_key],
+            partner_record=self,
+        )
+        self.calculate_quarter_totals()
+        if float_compare(self.amount, prev_amount, 2) != 0:
+            self.action_pending()
 
 
 class L10nEsAtcMod415RealStateRecord(models.Model):
