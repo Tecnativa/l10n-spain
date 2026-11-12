@@ -133,6 +133,13 @@ Usage
 
 7. Click on "Excel Export" for having the information in a spreadsheet.
 
+Credit notes are declared only for the goods physically returned: a line
+of a credit note whose sale or purchase order line has a done return
+picking is declared in the opposite flow (arrivals for sales, dispatches
+for purchases) with the transaction code 21. Credit notes without return
+of goods (price discounts, rappels, damaged goods kept by the customer)
+are not declared.
+
 Known issues / Roadmap
 ======================
 
@@ -148,6 +155,11 @@ Known issues / Roadmap
 - The current version of the Intrastat reporting module does not perform
   a cross-check with the VAT declaration.
 - Add tests.
+- A return of goods is declared in the month of its credit note, not in
+  the month of the return picking. It is detected through the order line
+  of the credit note: a later credit note without return on an order
+  line that had a return is declared as a return too, and goods returned
+  without a sale or purchase order must be added by hand.
 
 Bug Tracker
 ===========

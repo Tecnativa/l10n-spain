@@ -111,15 +111,18 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
                 "origin_country_id": cls.env.ref("base.fr").id,
             }
         )
-        # Invoices to be used in dispatches
+        # Invoices to be used in dispatches and arrivals, and credit notes
+        # without return of goods, which are not declared
         cls.invoices = {
             "dispatches": {
                 "invoices": [],
+                "refunds": [],
                 cls.partner_1.country_id: 0,
                 cls.partner_2.country_id: 0,
             },
             "arrivals": {
                 "invoices": [],
+                "refunds": [],
                 cls.partner_1.country_id: 0,
                 cls.partner_2.country_id: 0,
             },
@@ -134,6 +137,9 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
                 strict=True,
             ):
                 invoice = cls._create_invoice_for_intrastat(inv_type, partner, fiscal)
+                if invoice.move_type in ("in_refund", "out_refund"):
+                    cls.invoices[declaration_type]["refunds"].append(invoice)
+                    continue
                 cls.invoices[declaration_type]["invoices"].append(invoice)
                 cls.invoices[declaration_type][partner.country_id] += 1
 
@@ -201,6 +207,11 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
             for line in move.invoice_line_ids:
                 self.assertTrue(line in target.mapped("invoice_line_id"))
 
+    def _check_move_lines_absent(self, original, target):
+        for move in original:
+            for line in move.invoice_line_ids:
+                self.assertNotIn(line, target.invoice_line_id)
+
     def _check_declaration_lines(self, lines, fr_qty, pt_qty):
         for line in lines:
             if line.src_dest_country_code == self.env.ref("base.fr").code:
@@ -218,6 +229,10 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
         report_dispatches.action_gather()
         self._check_move_lines_present(
             self.invoices["dispatches"]["invoices"],
+            report_dispatches.computation_line_ids,
+        )
+        self._check_move_lines_absent(
+            self.invoices["dispatches"]["refunds"],
             report_dispatches.computation_line_ids,
         )
         report_dispatches.draft2confirmed()
@@ -293,8 +308,8 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
         report_dispatches.confirmed2done()
         self.assertEqual(report_dispatches.state, "done")
         self.assertEqual(
-            len(report_dispatches.declaration_line_ids), len(expected_invoices) / 2
-        )
+            len(report_dispatches.declaration_line_ids), len(expected_invoices)
+        )  # One line for each country
         for expected_note in expected_notes:
             self.assertNotIn(expected_note, report_dispatches.note)
 
@@ -302,7 +317,9 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
         # You must enable the language to check the values at the end
         self.env.ref("base.lang_es").active = True
         # We change the invoice amount to verify the values at the end
-        for invoice in self.invoices["arrivals"]["invoices"]:
+        for invoice in (
+            self.invoices["arrivals"]["invoices"] + self.invoices["arrivals"]["refunds"]
+        ):
             invoice.button_draft()
             invoice.invoice_line_ids.price_unit = 1000
             invoice.action_post()
@@ -311,6 +328,9 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
         report_arrivals.action_gather()
         self._check_move_lines_present(
             self.invoices["arrivals"]["invoices"], report_arrivals.computation_line_ids
+        )
+        self._check_move_lines_absent(
+            self.invoices["arrivals"]["refunds"], report_arrivals.computation_line_ids
         )
         report_arrivals.draft2confirmed()
         report_arrivals.confirmed2done()
@@ -337,5 +357,5 @@ class TestL10nIntraStatReport(AccountTestInvoicingCommon):
             self.assertTrue(items[0] in ("PT", "FR"))
             self.assertEqual(items[6], self.hs_code.local_code)
             self.assertEqual(items[9], "1000,00")
-            self.assertEqual(items[11], "2000,00")
-            self.assertEqual(items[12], "2000,00")
+            self.assertEqual(items[11], "1000,00")
+            self.assertEqual(items[12], "1000,00")

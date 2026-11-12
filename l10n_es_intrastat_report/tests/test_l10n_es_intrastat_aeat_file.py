@@ -192,22 +192,58 @@ class TestL10nEsIntrastatAeatFile(AccountTestInvoicingCommon):
             "FR;28;FCA;11;3;;61091000;PT;;1,00;4;40,00;40,00;FR86792377731;\n",
         )
 
+    def _return(self, picking, qty):
+        """Return of part of the goods from the "Return" button of the picking"""
+        action = picking.action_return()
+        return_picking = self.env["stock.picking"].browse(action["res_id"])
+        with (
+            Form(return_picking) as return_form,
+            return_form.move_ids.edit(0) as move_form,
+        ):
+            move_form.product_uom_qty = qty
+        return_picking.action_confirm()
+        return_picking.button_validate()
+        return return_picking
+
     @freeze_time("2025-03-20")
     def test_refunds(self):
-        """The credit note of a sale declares the goods coming back as an
-        arrival, and the one of a purchase the goods sent back as a dispatch,
-        both with a positive value and in the province of the warehouse."""
-        self._refund(self._deliver_and_invoice(self.customer_fr, 4, 10))
-        self._refund(self._receive_and_bill(self.supplier_de, 2, 20))
+        """The credit note of goods returned by the customer is an arrival and
+        the one of goods sent back to the supplier a dispatch, both as a return
+        (transaction 21) with a positive value and in the province of the
+        warehouse. A credit note without return of goods is not declared."""
+        # The orders invoice the quantities delivered and received, so their
+        # returns are credited from the order
+        self.product.write({"invoice_policy": "delivery", "purchase_method": "receive"})
+        invoice = self._deliver_and_invoice(self.customer_fr, 4, 10)
+        order = invoice.line_ids.sale_line_ids.order_id
+        self._return(order.picking_ids, 1)
+        sale_refund = order._create_invoices(final=True)
+        sale_refund.action_post()
+        self.assertEqual(sale_refund.move_type, "out_refund")
+        bill = self._receive_and_bill(self.supplier_de, 2, 20)
+        purchase = bill.line_ids.purchase_line_id.order_id
+        self._return(purchase.picking_ids, 1)
+        purchase_refund = self.env["account.move"].browse(
+            purchase.action_create_invoice()["res_id"]
+        )
+        purchase_refund.invoice_date = "2025-03-20"
+        purchase_refund.action_post()
+        self.assertEqual(purchase_refund.move_type, "in_refund")
+        # Price discounts without return of goods
+        self._refund(self._deliver_and_invoice(self.customer_pt, 2, 15))
+        self._refund(self._receive_and_bill(self.supplier_de, 3, 5))
         expected = {
-            # country, province, CN8, origin, weight, units, value, stat. value
+            # country, province, transaction, CN8, origin, weight, units, value,
+            # statistical value
             "arrivals": {
-                ("DE", "28", "61091000", "PT", "0,50", "2", "40,00", "40,00"),
-                ("FR", "03", "61091000", "PT", "1,00", "4", "40,00", "40,00"),
+                # The two purchases: 2 * 20 + 3 * 5
+                ("DE", "28", "11", "61091000", "PT", "1,25", "5", "55,00", "55,00"),
+                ("FR", "03", "21", "61091000", "PT", "0,25", "1", "10,00", "10,00"),
             },
             "dispatches": {
-                ("DE", "28", "61091000", "PT", "0,50", "2", "40,00", "40,00"),
-                ("FR", "03", "61091000", "PT", "1,00", "4", "40,00", "40,00"),
+                ("FR", "03", "11", "61091000", "PT", "1,00", "4", "40,00", "40,00"),
+                ("PT", "03", "12", "61091000", "PT", "0,50", "2", "30,00", "30,00"),
+                ("DE", "28", "21", "61091000", "PT", "0,25", "1", "20,00", "20,00"),
             },
         }
         for declaration_type, expected_lines in expected.items():
@@ -219,7 +255,7 @@ class TestL10nEsIntrastatAeatFile(AccountTestInvoicingCommon):
             )
             self.assertEqual(
                 {
-                    tuple(line.split(";")[i] for i in (0, 1, 6, 7, 9, 10, 11, 12))
+                    tuple(line.split(";")[i] for i in (0, 1, 3, 6, 7, 9, 10, 11, 12))
                     for line in csv_lines
                 },
                 expected_lines,

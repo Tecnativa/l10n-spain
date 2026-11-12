@@ -31,10 +31,35 @@ class IntrastatProductDeclaration(models.Model):
             intrastat_state = inv_line.company_id.partner_id.state_id
         return intrastat_state
 
+    def _get_return_moves(self, inv_line):
+        """Done moves that return the goods of the order of a credit note line:
+        from the customer for a sale, to the supplier for a purchase."""
+        if inv_line.move_id.move_type == "out_refund":
+            moves = inv_line.sale_line_ids.move_ids.filtered(
+                lambda move: move.location_id.usage == "customer"
+            )
+        else:
+            moves = inv_line.purchase_line_id.move_ids.filtered(
+                lambda move: move.location_dest_id.usage == "supplier"
+            )
+        return moves.filtered(
+            lambda move: move.state == "done" and move.origin_returned_move_id
+        )
+
     def _update_computation_line_vals(self, inv_line, line_vals, notedict):
         result = super()._update_computation_line_vals(inv_line, line_vals, notedict)
         if self.company_id.country_id.code != "ES":
             return result
+        if inv_line.move_id.move_type in ("out_refund", "in_refund"):
+            # A credit note is declared only for the goods physically returned,
+            # as a return (transaction 21); without return (discount, rappel,
+            # damaged goods kept) nothing is declared
+            if not self._get_return_moves(inv_line):
+                line_vals.clear()
+                return result
+            line_vals["transaction_id"] = self._intrastat_ref(
+                "intrastat_product.intrastat_transaction_21"
+            ).id
         intrastat_state = self._get_intrastat_state(inv_line)
         if intrastat_state:
             line_vals["intrastat_state_id"] = intrastat_state.id
@@ -56,12 +81,10 @@ class IntrastatProductDeclaration(models.Model):
         return result
 
     def _prepare_invoice_domain(self):
-        # TODO: check with ES legislation
-        """
-        Both in_ and out_refund must be included in order to cover
-        - credit notes with and without return
-        - companies subject to arrivals or dispatches only
-        """
+        """The goods returned are declared in the flow opposite to the original
+        one, so the credit notes of sales are searched in the arrivals and the
+        ones of purchases in the dispatches. Only their lines with a return of
+        goods are declared (see ``_update_computation_line_vals``)."""
         domain = super()._prepare_invoice_domain()
         if self.company_id.country_id.code != "ES":
             return domain

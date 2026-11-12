@@ -481,6 +481,12 @@ declaring the report in AEAT.</p>
 <li><p class="first">Click on “Excel Export” for having the information in a spreadsheet.</p>
 </li>
 </ol>
+<p>Credit notes are declared only for the goods physically returned: a line
+of a credit note whose sale or purchase order line has a done return
+picking is declared in the opposite flow (arrivals for sales, dispatches
+for purchases) with the transaction code 21. Credit notes without return
+of goods (price discounts, rappels, damaged goods kept by the customer)
+are not declared.</p>
 </div>
 <div class="section" id="known-issues-roadmap">
 <h2><a class="toc-backref" href="#toc-entry-4">Known issues / Roadmap</a></h2>
@@ -497,6 +503,11 @@ lines before generating the declaration.</li>
 <li>The current version of the Intrastat reporting module does not perform
 a cross-check with the VAT declaration.</li>
 <li>Add tests.</li>
+<li>A return of goods is declared in the month of its credit note, not in
+the month of the return picking. It is detected through the order line
+of the credit note: a later credit note without return on an order
+line that had a return is declared as a return too, and goods returned
+without a sale or purchase order must be added by hand.</li>
 </ul>
 </div>
 <div class="section" id="bug-tracker">

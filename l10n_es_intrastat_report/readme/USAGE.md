@@ -29,3 +29,9 @@
     declaring the report in AEAT.
 
 7.  Click on "Excel Export" for having the information in a spreadsheet.
+
+Credit notes are declared only for the goods physically returned: a line of
+a credit note whose sale or purchase order line has a done return picking is
+declared in the opposite flow (arrivals for sales, dispatches for purchases)
+with the transaction code 21. Credit notes without return of goods (price
+discounts, rappels, damaged goods kept by the customer) are not declared.
