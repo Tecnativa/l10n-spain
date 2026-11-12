@@ -4,6 +4,7 @@
 from typing import ClassVar
 
 from odoo import exceptions
+from odoo.fields import Command
 from odoo.tests import Form
 
 from odoo.addons.l10n_es_aeat.tests.test_l10n_es_aeat_mod_base import (
@@ -347,6 +348,66 @@ class TestL10nEsAeatMod347(TestL10nEsAeatModBase):
         )
         composer._action_send_mail()
         self.assertEqual(partner_record.state, "sent")
+
+    def _partner_record(self, partner, report=None):
+        return (report or self.model347).partner_record_ids.filtered(
+            lambda x: x.partner_id == partner
+        )
+
+    def test_mod347_cash_other_company(self):
+        """Cash collected by another company of the user is not declared."""
+        company_2 = self.env["res.company"].sudo().create({"name": "Company 2"})
+        self.env["account.chart.template"].sudo()._load(
+            template_code="es_pymes", company=company_2, install_demo=False
+        )
+        self.env.user.sudo().company_ids |= company_2
+        env_2 = self.env(
+            context=dict(
+                self.env.context,
+                company_id=company_2.id,
+                allowed_company_ids=[company_2.id, self.company.id],
+            )
+        )
+        cash_journal = env_2["account.journal"].create(
+            {"name": "Cash 2", "code": "CSH2", "type": "cash"}
+        )
+        receivable = env_2["account.account"].search(
+            [
+                ("company_ids", "=", company_2.id),
+                ("account_type", "=", "asset_receivable"),
+            ],
+            limit=1,
+        )
+        move = env_2["account.move"].create(
+            {
+                "company_id": company_2.id,
+                "journal_id": cash_journal.id,
+                "date": "2019-05-01",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "account_id": cash_journal.default_account_id.id,
+                            "debit": 7000,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "account_id": receivable.id,
+                            "partner_id": self.customer_2.id,
+                            "credit": 7000,
+                        }
+                    ),
+                ],
+            }
+        )
+        move.action_post()
+        self.model347.with_context(
+            allowed_company_ids=(self.company | company_2).ids
+        ).button_calculate()
+        partner_record = self._partner_record(self.customer_2)
+        self.assertAlmostEqual(partner_record.amount, 4400)
+        self.assertAlmostEqual(partner_record.cash_amount, 0)
+        self.assertAlmostEqual(self.model347.total_cash_amount, 13200)
 
 
 class TestL10nEsAeatMod347CoreTaxes(TestL10nEsAeatModBase):

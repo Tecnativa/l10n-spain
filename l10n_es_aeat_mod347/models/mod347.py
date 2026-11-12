@@ -281,13 +281,15 @@ class L10nEsAeatMod347Report(models.Model):
 
     def _create_cash_moves(self):
         move_line_obj = self.env["account.move.line"]
+        company_domain = Domain("company_id", "child_of", self.company_id.id)
         cash_journals = self.env["account.journal"].search(
-            [Domain("type", "=", "cash")],
+            Domain("type", "=", "cash") & company_domain
         )
         if not cash_journals:
             return
         domain = Domain.AND(
             [
+                company_domain,
                 Domain("account_id.account_type", "=", "asset_receivable"),
                 Domain("journal_id", "in", cash_journals.ids),
                 Domain("date", ">=", self.date_start),
