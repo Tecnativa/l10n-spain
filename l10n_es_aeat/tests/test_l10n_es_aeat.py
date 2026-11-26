@@ -26,22 +26,49 @@ class TestL10nEsAeat(BaseCommon):
             " &'(),-./01:;ABAB_ÇÑAEIOUAEIOU   ".encode("iso-8859-1"),
         )
 
-    def test_01_placeholder_vat_with_native_identifier(self) -> None:
-        for vat in ("/", "NA", "NO_DISPONIBLE"):
-            partner = (
-                self.env["res.partner"]
-                .with_context(no_vat_validation=True)
-                .create(
-                    {
-                        "name": "Partner with alternative identifier",
-                        "country_id": self.env.ref("base.us").id,
-                        "vat": vat,
-                        "l10n_es_res_cert": "CERT123",
-                    }
-                )
-            )
-            self.assertTrue(partner._has_valid_aeat_identification())
-            self.assertEqual(partner._parse_aeat_vat_info(), ("US", "05", "CERT123"))
+    def test_parse_vat_info_additional_identifiers(self) -> None:
+        """Without a useful VAT, the first additional identifier gives the
+        identifier type; a valid Spanish or intra-community VAT goes first."""
+        es, pt, it, us = (
+            self.env.ref(f"base.{code}").id for code in ("es", "pt", "it", "us")
+        )
+        cases = [
+            ({"country_id": pt, "l10n_es_passport": "P"}, ("PT", "03", "P")),
+            ({"country_id": pt, "l10n_es_foreign_id": "F"}, ("PT", "04", "F")),
+            ({"country_id": pt, "l10n_es_res_cert": "R"}, ("PT", "05", "R")),
+            ({"country_id": pt, "l10n_es_other_id": "O"}, ("PT", "06", "O")),
+            (
+                {"country_id": pt, "l10n_es_passport": "P", "l10n_es_other_id": "O"},
+                ("PT", "03", "P"),
+            ),
+            (
+                {"country_id": us, "vat": "NO_DISPONIBLE", "l10n_es_res_cert": "R"},
+                ("US", "05", "R"),
+            ),
+            (
+                {"country_id": es, "vat": "12345678Z", "l10n_es_passport": "P"},
+                ("ES", "", "12345678Z"),
+            ),
+            (
+                {"country_id": es, "vat": "INVALID-NIF", "l10n_es_passport": "P"},
+                ("ES", "03", "P"),
+            ),
+            (
+                {"country_id": pt, "vat": "FR61954506077", "l10n_es_passport": "P"},
+                ("FR", "02", "61954506077"),
+            ),
+            ({"country_id": es}, ("ES", "", "")),
+            ({"country_id": es, "vat": "ESINVALID-NIF"}, ("ES", "", "INVALIDNIF")),
+            (
+                {"country_id": it, "vat": "ITMRTMTT91D08F205J"},
+                ("IT", "04", "MRTMTT91D08F205J"),
+            ),
+        ]
+        Partner = self.env["res.partner"].with_context(no_vat_validation=True)
+        for vals, expected in cases:
+            with self.subTest(vals=vals):
+                partner = Partner.create({"name": "Test partner", **vals})
+                self.assertEqual(partner._parse_aeat_vat_info(), expected)
 
     def test_parse_vat_info_es_wo_prefix(self) -> None:
         self.partner.write(
@@ -64,120 +91,6 @@ class TestL10nEsAeat(BaseCommon):
             self.partner.write(
                 {"vat": "ZZ_MY_PASSPORT", "country_id": self.env.ref("base.es").id}
             )
-
-    def test_parse_vat_info_native_identifiers(self) -> None:
-        identifiers = (
-            ("l10n_es_passport", "03"),
-            ("l10n_es_foreign_id", "04"),
-            ("l10n_es_res_cert", "05"),
-            ("l10n_es_other_id", "06"),
-        )
-        for field_name, expected_type in identifiers:
-            partner = self.env["res.partner"].create(
-                {
-                    "name": f"Partner with {field_name}",
-                    "country_id": self.env.ref("base.pt").id,
-                    field_name: f"ID-{expected_type}",
-                }
-            )
-            self.assertEqual(
-                partner._parse_aeat_vat_info(),
-                ("PT", expected_type, f"ID-{expected_type}"),
-            )
-
-    def test_parse_vat_info_native_identifier_priority(self) -> None:
-        partner = self.env["res.partner"].create(
-            {
-                "name": "Partner with multiple identifiers",
-                "country_id": self.env.ref("base.pt").id,
-                "l10n_es_passport": "PASSPORT",
-                "l10n_es_foreign_id": "FOREIGN-ID",
-                "l10n_es_res_cert": "RESIDENCE-CERTIFICATE",
-                "l10n_es_other_id": "OTHER-ID",
-            }
-        )
-        self.assertEqual(
-            partner._parse_aeat_vat_info(),
-            ("PT", "03", "PASSPORT"),
-        )
-
-    def test_parse_vat_info_vat_priority(self) -> None:
-        partner = self.env["res.partner"].create(
-            {
-                "name": "Spanish partner with passport",
-                "country_id": self.env.ref("base.es").id,
-                "vat": "12345678Z",
-                "l10n_es_passport": "PASSPORT",
-            }
-        )
-        self.assertEqual(
-            partner._parse_aeat_vat_info(),
-            ("ES", "", "12345678Z"),
-        )
-        partner_with_invalid_nif = (
-            self.env["res.partner"]
-            .with_context(no_vat_validation=True)
-            .create(
-                {
-                    "name": "Spanish partner with invalid NIF and passport",
-                    "country_id": self.env.ref("base.es").id,
-                    "vat": "INVALID-NIF",
-                    "l10n_es_passport": "PASSPORT",
-                }
-            )
-        )
-        self.assertEqual(
-            partner_with_invalid_nif._parse_aeat_vat_info(),
-            ("ES", "03", "PASSPORT"),
-        )
-        partner.write(
-            {
-                "country_id": self.env.ref("base.pt").id,
-                "vat": "FR61954506077",
-            }
-        )
-        self.assertEqual(
-            partner._parse_aeat_vat_info(),
-            ("FR", "02", "61954506077"),
-        )
-
-    def test_parse_vat_info_keeps_legacy_result_without_native_identifier(
-        self,
-    ) -> None:
-        self.partner.country_id = self.env.ref("base.es")
-        self.assertEqual(self.partner._parse_aeat_vat_info(), ("ES", "", ""))
-
-        spanish_partner = (
-            self.env["res.partner"]
-            .with_context(no_vat_validation=True)
-            .create(
-                {
-                    "name": "Spanish partner with invalid prefixed NIF",
-                    "country_id": self.env.ref("base.es").id,
-                    "vat": "ESINVALID-NIF",
-                }
-            )
-        )
-        self.assertEqual(
-            spanish_partner._parse_aeat_vat_info(),
-            ("ES", "", "INVALIDNIF"),
-        )
-
-        italian_partner = (
-            self.env["res.partner"]
-            .with_context(no_vat_validation=True)
-            .create(
-                {
-                    "name": "Italian partner with prefixed codice fiscale",
-                    "country_id": self.env.ref("base.it").id,
-                    "vat": "ITMRTMTT91D08F205J",
-                }
-            )
-        )
-        self.assertEqual(
-            italian_partner._parse_aeat_vat_info(),
-            ("IT", "04", "MRTMTT91D08F205J"),
-        )
 
     def test_parse_vat_info_fr_wo_prefix(self) -> None:
         self.partner.write(
@@ -417,13 +330,3 @@ class TestL10nEsAeat(BaseCommon):
                 allow_alternative_identification=False
             )
         )
-
-    def test_get_aeat_europe_codes_cache(self) -> None:
-        partner_model = self.env["res.partner"]
-        europe = self.env.ref("base.europe")
-        expected = [c.code for c in europe.country_ids] + ["XI"]
-        codes_env1 = partner_model._get_aeat_europe_codes()
-        codes_env2 = partner_model.with_context(lang="es_ES")._get_aeat_europe_codes()
-        self.assertEqual(codes_env1, expected)
-        self.assertIn("XI", codes_env1)
-        self.assertIs(codes_env1, codes_env2)

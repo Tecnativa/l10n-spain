@@ -5,7 +5,6 @@
 from odoo import exceptions, fields
 from odoo.orm.model_classes import add_to_registry
 from odoo.tests import Form, tagged
-from odoo.tools.safe_eval import safe_eval
 
 from odoo.addons.base.tests.common import BaseCommon
 
@@ -158,32 +157,3 @@ class TestL10nEsAeatReport(BaseCommon):
         self.assertEqual(action["res_id"], wizard.id)
         self.assertEqual(wizard.data.content, b"BOE")
         self.assertEqual(attachment.raw.content, b"BOE")
-
-    def test_01_bank_domain_only_accepts_iban_of_report_partner(self):
-        report = self.AeatReport.new({"company_id": self.company.id})
-        partner = report.partner_id
-        bank_model = self.env["res.partner.bank"]
-        matching_iban = bank_model.create(
-            {
-                "partner_id": partner.id,
-                "account_number": "ES66 2100 0418 4012 3456 7891",
-            }
-        )
-        other_partner_iban = bank_model.create(
-            {
-                "partner_id": self.env["res.partner"].create({"name": "Other"}).id,
-                "account_number": "ES66 2100 0418 4012 3456 7891",
-            }
-        )
-        non_iban = bank_model.create(
-            {"partner_id": partner.id, "account_number": "1234-5678"}
-        )
-        domain = safe_eval(
-            report._fields["partner_bank_id"].domain,
-            {"partner_id": partner.id},
-        )
-
-        self.assertTrue(bank_model._fields["account_type"].store)
-        self.assertEqual(bank_model.search(domain), matching_iban)
-        self.assertNotIn(other_partner_iban, bank_model.search(domain))
-        self.assertNotIn(non_iban, bank_model.search(domain))

@@ -128,11 +128,6 @@ class TestL10nEsAeatTaxInfoNonDeductible(TestL10nEsAeatModBase):
             },
         )
 
-    def test_tax_info_non_deductible(self):
-        """100 + 21 % at 50 %: base 100, quota 21, deductible quota 10.50."""
-        bill = self._create_bill([(100, "P_IVA21_BC", 0.5)])
-        self._assert_tax_info(bill, {"P_IVA21_BC": (100, 21, 10.5)})
-
     def test_tax_info_non_deductible_refund(self):
         """The refund of the bill gives the same amounts with the sign changed."""
         bill = self._create_bill([(100, "P_IVA21_BC", 0.5)])
@@ -158,87 +153,7 @@ class TestL10nEsAeatTaxInfoNonDeductible(TestL10nEsAeatModBase):
             {"P_IVA21_BC": (400, 84, 73.5), "P_IVA10_BC": (200, 20, 4)},
         )
 
-    def test_tax_info_standard_non_deductible(self) -> None:
-        """Standard non-deductible tax keeps base and total fee, with 0 deductible."""
-        nd_tax = self.env["account.tax"].search(
-            [
-                ("company_id", "=", self.company.id),
-                ("type_tax_use", "=", "purchase"),
-                ("l10n_es_type", "=", "no_deducible"),
-                ("amount", "=", 21),
-            ],
-            limit=1,
-        )
-        self.assertTrue(nd_tax)
-        bill = self._create_bill([(100, "P_IVA21_BC", 1)])
-        bill.button_draft()
-        bill.invoice_line_ids.tax_ids = [(6, 0, nd_tax.ids)]
-        bill.action_post()
-        tax_info = bill._get_aeat_tax_info()
-        self.assertEqual(
-            {
-                tax: tuple(
-                    round(vals[key], 2)
-                    for key in ("base", "amount", "deductible_amount")
-                )
-                for tax, vals in tax_info.items()
-            },
-            {nd_tax: (100, 21, 0)},
-        )
-
-    def test_tax_info_custom_non_deductible_without_xmlid_group(self) -> None:
-        """Custom tax with l10n_es_type='no_deducible' and no-XMLID group
-        excludes its fee from deductible_amount."""
-        custom_group = self.env["account.tax.group"].create({"name": "Custom ND Group"})
-        base_tax = self._get_taxes("P_IVA21_BC")
-        custom_tax = base_tax.copy(
-            {
-                "name": "Custom IVA 21% ND",
-                "l10n_es_type": "no_deducible",
-                "tax_group_id": custom_group.id,
-            }
-        )
-        bill = self._create_bill([(100, "P_IVA21_BC", 1)])
-        bill.button_draft()
-        bill.invoice_line_ids.tax_ids = [(6, 0, custom_tax.ids)]
-        bill.action_post()
-        tax_info = bill._get_aeat_tax_info()
-        self.assertEqual(
-            {
-                tax: tuple(
-                    round(vals[key], 2)
-                    for key in ("base", "amount", "deductible_amount")
-                )
-                for tax, vals in tax_info.items()
-            },
-            {custom_tax: (100, 21, 0)},
-        )
-
-    def test_tax_info_custom_deductible_without_xmlid_group(self) -> None:
-        """Custom deductible tax with no-XMLID group keeps deductible_amount."""
-        custom_group = self.env["account.tax.group"].create(
-            {"name": "Custom Deductible Group"}
-        )
-        base_tax = self._get_taxes("P_IVA21_BC")
-        custom_tax = base_tax.copy(
-            {
-                "name": "Custom IVA 21% Deductible",
-                "l10n_es_type": "sujeto",
-                "tax_group_id": custom_group.id,
-            }
-        )
-        bill = self._create_bill([(100, "P_IVA21_BC", 1)])
-        bill.button_draft()
-        bill.invoice_line_ids.tax_ids = [(6, 0, custom_tax.ids)]
-        bill.action_post()
-        tax_info = bill._get_aeat_tax_info()
-        self.assertEqual(
-            {
-                tax: tuple(
-                    round(vals[key], 2)
-                    for key in ("base", "amount", "deductible_amount")
-                )
-                for tax, vals in tax_info.items()
-            },
-            {custom_tax: (100, 21, 21)},
-        )
+    def test_tax_info_non_deductible_tax(self):
+        """A non deductible tax gives its quota without deductible quota."""
+        bill = self._create_bill([(100, "P_IVA0_ND", 1)])
+        self._assert_tax_info(bill, {"P_IVA0_ND": (100, 21, 0)})

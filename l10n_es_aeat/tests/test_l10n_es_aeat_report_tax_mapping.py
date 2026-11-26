@@ -58,6 +58,9 @@ class TestL10nEsAeatReportTaxMapping(TestL10nEsAeatModBase):
                             line_vals, field_number=2, name="Quota", field_type="amount"
                         )
                     ),
+                    Command.create(
+                        dict(line_vals, field_number=3, name="Both", field_type="both")
+                    ),
                 ],
             }
         )
@@ -98,25 +101,14 @@ class TestL10nEsAeatReportTaxMapping(TestL10nEsAeatModBase):
         report.button_calculate()
         return {line.field_number: line.amount for line in report.tax_line_ids}
 
-    def test_non_deductible_bill_base(self):
+    def test_non_deductible_bill(self):
         """A bill line of 100 + 21 % VAT, 50 % deductible: the base is the
         deductible part (50), the base of the deductible quota (10.50), not the
         private part of the tax that Odoo core books on a line with the taxes of
-        its account.
+        its account, and a map line of base and quota adds both.
         """
         self._create_bill(0.5)
         amounts = self._calculate_report()
         self.assertAlmostEqual(amounts[1], 50.0, 2)
         self.assertAlmostEqual(amounts[2], 10.5, 2)
-
-    def test_non_deductible_bill_both(self):
-        """A map line of base and quota adds the deductible base and quota."""
-        # The tax maps come from module data, which the user does not edit
-        self.tax_map.sudo().map_line_ids = [
-            Command.create(
-                dict(self.line_vals, field_number=3, name="Both", field_type="both")
-            )
-        ]
-        self._create_bill(0.5)
-        amounts = self._calculate_report()
         self.assertAlmostEqual(amounts[3], 60.5, 2)

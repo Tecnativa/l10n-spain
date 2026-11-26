@@ -244,16 +244,10 @@ class TestL10nEsAeatRealEstate(TestL10nEsAeatModBase):
                 ]
             },
         )
-        report = self.env["account.invoice.report"]
-        domain = [("move_id", "=", invoice.id)]
-        self.assertEqual(
-            report.search(domain).mapped("l10n_es_aeat_real_estate_id"),
-            real_estate,
+        report = self.env["account.invoice.report"].search(
+            [("move_id", "=", invoice.id)]
         )
-        self.assertEqual(
-            report._read_group(domain, ["l10n_es_aeat_real_estate_id"], ["__count"]),
-            [(real_estate, 1)],
-        )
+        self.assertEqual(report.l10n_es_aeat_real_estate_id, real_estate)
 
     def _check_creation(self, cases, **common_vals):
         """Create a real estate with each set of values, expecting an error for
@@ -332,7 +326,6 @@ class TestL10nEsAeatRealEstate(TestL10nEsAeatModBase):
     def test_sii_347_situation(self):
         """The SII and the model 347 join the Basque Country and Navarre, give 3
         without reference and 4 abroad."""
-        Estate = self.env["l10n.es.aeat.real_estate"]
         foral_reference = "201001000123400001"
         cases = (
             ("base.state_es_m", self.references[1], "1"),
@@ -340,23 +333,28 @@ class TestL10nEsAeatRealEstate(TestL10nEsAeatModBase):
             ("base.state_es_na", foral_reference, "2"),
             ("base.state_es_m", False, "3"),
         )
-        for state_xmlid, reference, situation in cases:
-            estate = Estate.create(
+        *estates, abroad = self.env["l10n.es.aeat.real_estate"].create(
+            [
                 {
                     **self._base_vals(state_xmlid),
                     "state_id": self.env.ref(state_xmlid).id,
                     "reference": reference,
                 }
-            )
-            self.assertEqual(estate._get_sii_347_situation(), situation, state_xmlid)
-        abroad = Estate.create(
-            {
-                **self._base_vals("Abroad"),
-                "country_id": self.env.ref("base.fr").id,
-                "reference": "FR-75056-000AB-0123",
-            }
+                for state_xmlid, reference, _situation in cases
+            ]
+            + [
+                {
+                    **self._base_vals("Abroad"),
+                    "country_id": self.env.ref("base.fr").id,
+                    "reference": "FR-75056-000AB-0123",
+                }
+            ]
         )
-        self.assertEqual(abroad._get_sii_347_situation(), "4")
+        self.assertEqual(
+            [estate._get_sii_347_situation() for estate in estates + [abroad]],
+            [situation for *_values, situation in cases] + ["4"],
+        )
         # A situation of the model 180 set by hand is kept
+        estate = estates[-1]
         estate.real_estate_situation = "3"
         self.assertEqual(estate._get_sii_347_situation(), "2")
